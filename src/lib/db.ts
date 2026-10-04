@@ -272,6 +272,11 @@ export function getArtifacts(limit = 20): Artifact[] {
   ).map(mapArtifact);
 }
 
+export function getArtifact(id: string): Artifact | null {
+  const row = db.prepare("SELECT * FROM artifacts WHERE id = ?").get(id) as ArtifactRow | undefined;
+  return row ? mapArtifact(row) : null;
+}
+
 export function insertArtifact(input: {
   agentId: string;
   title: string;

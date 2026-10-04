@@ -1,18 +1,20 @@
 [
   {
+    "date": "2026-10-05",
+    "macrostructure": "Workbench",
+    "theme": "custom",
+    "theme_axes": "dark / condensed-display / acid-lime",
+    "vibe": "midnight biome operations console",
+    "enrichment": "network topology as product UI",
+    "brief": "Convert AI Agent Zoo from one-page presentation into a real multi-route operator product."
+  },
+  {
     "date": "2026-10-04",
     "macrostructure": "Map / Diagram",
     "theme": "custom",
     "theme_axes": "light / geometric-sans / chromatic-green",
-    "vibe": "field station, living network, botanical restraint",
-    "enrichment": "none — map is product UI",
-    "brief": "Product-first operational dashboard for the autonomous agent zoo"
-  },
-  {
-    "date": "2026-10-04",
-    "macrostructure": "Workbench",
-    "theme": "supplied warm editorial system",
-    "enrichment": "tier-A CSS network",
-    "brief": "Web3-ready public habitat for observable autonomous agents"
+    "vibe": "field station botanical restraint",
+    "enrichment": "none",
+    "brief": "Create the first operational habitat dashboard."
   }
 ]
