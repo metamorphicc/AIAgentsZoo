@@ -1,8 +1,16 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
 import type { Agent } from "@/lib/zoo/types";
 import { formatStatus } from "@/lib/format";
+
+const speciesPortraits: Record<Agent["species"], string> = {
+  raven: "/animals/crow.svg",
+  beaver: "/animals/beaver.svg",
+  owl: "/animals/owl.svg",
+  meerkat: "/animals/meerkat.svg",
+};
 
 export function PageHeading({
   eyebrow,
@@ -30,7 +38,14 @@ export function PageHeading({
 export function AgentMark({ agent }: { agent: Agent }) {
   return (
     <span className={`agent-mark agent-mark--${agent.species}`} aria-hidden="true">
-      {agent.species.slice(0, 2).toUpperCase()}
+      <Image
+        alt=""
+        className="agent-mark-image"
+        height={512}
+        priority={false}
+        src={speciesPortraits[agent.species]}
+        width={512}
+      />
     </span>
   );
 }
