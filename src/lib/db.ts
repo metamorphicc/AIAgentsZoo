@@ -1,14 +1,13 @@
 import { mkdirSync } from "node:fs";
 import { randomUUID } from "node:crypto";
-import { dirname, join, resolve } from "node:path";
+import { dirname } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
+import { getDatabasePath } from "@/lib/database-path";
 import { initialAgents } from "@/lib/zoo/species";
 import type { Agent, AgentRun, Artifact, ZooEvent } from "@/lib/zoo/types";
 
-const databasePath = process.env.DATABASE_PATH
-  ? resolve(/* turbopackIgnore: true */ process.env.DATABASE_PATH)
-  : join(process.cwd(), "data", "zoo.db");
+const databasePath = getDatabasePath();
 mkdirSync(dirname(databasePath), { recursive: true });
 
 const globalDatabase = globalThis as typeof globalThis & {
