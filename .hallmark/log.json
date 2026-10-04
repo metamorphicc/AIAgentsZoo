@@ -1,6 +1,15 @@
 [
   {
     "date": "2026-10-05",
+    "macrostructure": "Workbench refinement",
+    "theme": "studied-DNA",
+    "theme_axes": "dark / rounded-geometric / acid-lime",
+    "vibe": "living midnight habitat console",
+    "enrichment": "user-supplied species artwork",
+    "brief": "Add animal artwork, restore spatial rhythm, adopt Google Sans, and animate the living network."
+  },
+  {
+    "date": "2026-10-05",
     "macrostructure": "Workbench",
     "theme": "custom",
     "theme_axes": "dark / condensed-display / acid-lime",

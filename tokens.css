@@ -16,9 +16,9 @@
   --color-warning: oklch(82% 0.17 82);
   --color-success: oklch(81% 0.19 145);
 
-  --font-display: var(--font-barlow-condensed), Impact, sans-serif;
-  --font-body: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
-  --font-outlier: var(--font-geist-mono), ui-monospace, monospace;
+  --font-display: var(--font-google-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-google-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-outlier: var(--font-google-sans-code), ui-monospace, monospace;
   --font-mono: var(--font-outlier);
   --display-weight: 600;
   --tracking-display: -0.025em;
@@ -30,7 +30,7 @@
   --text-lg: 1.25rem;
   --text-xl: 1.65rem;
   --text-2xl: clamp(2.25rem, 4vw, 3.75rem);
-  --text-display: clamp(3.75rem, 8vw, 8.5rem);
+  --text-display: clamp(3.25rem, 7vw, 7.25rem);
 
   --space-3xs: 0.25rem;
   --space-2xs: 0.5rem;
@@ -80,12 +80,6 @@
   --text-body-lg: var(--text-lg);
   --text-heading-sm: var(--text-xl);
   --text-heading: var(--text-2xl);
-  --space-xs: var(--space-2xs);
-  --space-sm: var(--space-xs);
-  --space-md: var(--space-sm);
-  --space-lg: var(--space-md);
-  --space-xl: var(--space-lg);
-  --space-2xl: var(--space-xl);
   --radius-sm: var(--radius-input);
   --radius-panel: var(--radius-card);
   --rule-hairline: var(--rule-hair) solid var(--color-rule);

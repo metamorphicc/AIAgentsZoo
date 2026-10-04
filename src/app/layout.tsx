@@ -1,25 +1,22 @@
 import type { Metadata } from "next";
-import { Barlow_Condensed, Geist, Geist_Mono } from "next/font/google";
+import { Google_Sans, Google_Sans_Code } from "next/font/google";
 import type { ReactNode } from "react";
 
 import "./globals.css";
 
-const barlowCondensed = Barlow_Condensed({
+const googleSans = Google_Sans({
+  adjustFontFallback: false,
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
-  variable: "--font-barlow-condensed",
+  weight: "variable",
+  variable: "--font-google-sans",
   display: "swap",
 });
 
-const geist = Geist({
+const googleSansCode = Google_Sans_Code({
+  adjustFontFallback: false,
   subsets: ["latin"],
-  variable: "--font-geist",
-  display: "swap",
-});
-
-const geistMono = Geist_Mono({
-  subsets: ["latin"],
-  variable: "--font-geist-mono",
+  weight: "variable",
+  variable: "--font-google-sans-code",
   display: "swap",
 });
 
@@ -30,7 +27,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="en" className={`${barlowCondensed.variable} ${geist.variable} ${geistMono.variable}`}>
+    <html lang="en" className={`${googleSans.variable} ${googleSansCode.variable}`}>
       <body>{children}</body>
     </html>
   );

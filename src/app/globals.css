@@ -1,5 +1,5 @@
-/* Hallmark · genre: atmospheric · macrostructure: Workbench · tone: alive, exact, crypto-native · audience: agent operators and web3 builders · use: run and inspect an autonomous habitat · theme: studied-DNA (source: higgspad.com), adapted as “midnight biome” · axes: dark / condensed-display / acid-lime · enrichment: network topology as product UI · nav: N1b adapted three-section · footer: Ft2 · contrast: pass (40–41) · slop: pass (42–49) · honest: pass (46) · chrome: pass (47) · tokens: pass (48) · responsive: pass (34, 49, 50–57) · icons: pass (30) */
-/* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5 */
+/* Hallmark · genre: atmospheric · macrostructure: Workbench refinement · tone: alive, exact, crypto-native · audience: agent operators and web3 builders · use: run and inspect an autonomous habitat · theme: studied-DNA (source: higgspad.com), adapted as “midnight biome” · axes: dark / rounded-geometric / acid-lime · enrichment: user-supplied species artwork + network topology · nav: N1b adapted three-section · footer: Ft2 · contrast: pass (40–41) · slop: pass (42–49) · honest: pass (46) · chrome: pass (47) · tokens: pass (48) · responsive: pass (34, 49, 50–57) · icons: pass (30) */
+/* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V4 */
 @import "../../tokens.css";
 
 html,
@@ -815,7 +815,7 @@ body {
   background: var(--color-paper-2);
 }
 .network-panel, .pulse-panel, .latest-artifacts, .directory-panel, .ledger-panel, .artifact-registry, .manage-list, .protocol-stack, .agent-ledger { padding: var(--space-md); }
-.section-heading { display: flex; align-items: end; justify-content: space-between; gap: var(--space-sm); margin-bottom: var(--space-md); }
+.section-heading { display: flex; flex-direction: row; align-items: end; justify-content: space-between; gap: var(--space-sm); margin-bottom: var(--space-md); }
 .section-heading h2 { margin-top: var(--space-3xs); font-family: var(--font-display); font-size: var(--text-xl); font-weight: 600; letter-spacing: 0; }
 .section-heading > a, .section-heading > span { color: var(--color-muted); font-size: var(--text-xs); text-decoration: none; }
 
@@ -851,6 +851,32 @@ body {
 .agent-mark--beaver { border-color: var(--color-warning); }
 .agent-mark--owl { border-color: var(--color-ink-2); }
 .agent-mark--meerkat { border-color: var(--color-success); }
+
+@keyframes habitat-arrive {
+  from { opacity: 0; transform: translateY(var(--space-xs)); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes signal-flow {
+  from { opacity: 0.42; }
+  to { opacity: 1; }
+}
+
+@keyframes animal-idle {
+  from { transform: scale(0.88) translateY(0); }
+  to { transform: scale(0.91) translateY(calc(-1 * var(--space-3xs))); }
+}
+
+.network-stage .signal-path { animation: signal-flow 2.4s var(--ease-in-out) infinite alternate; }
+.network-agent { animation: habitat-arrive var(--dur-long) var(--ease-out) backwards; }
+.network-agent--raven { animation-delay: 0ms; }
+.network-agent--beaver { animation-delay: 100ms; }
+.network-agent--owl { animation-delay: 200ms; }
+.network-agent--meerkat { animation-delay: 300ms; }
+.network-agent .agent-mark-image { animation: animal-idle 4.8s var(--ease-in-out) 600ms infinite alternate; }
+.network-agent--raven .agent-mark-image { animation-duration: 4.2s; }
+.network-agent--owl .agent-mark-image { animation-duration: 5.4s; }
+.network-agent--meerkat .agent-mark-image { animation-duration: 4.6s; }
 
 .compact-trace, .ledger-list, .cycle-list { margin: 0; padding: 0; list-style: none; }
 .compact-trace li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-2xs) var(--space-xs); padding-block: var(--space-sm); border-top: var(--rule-hair) solid var(--color-rule); }
@@ -939,6 +965,7 @@ body {
   .product-nav { min-height: 4.25rem; padding-inline: var(--space-sm); }.product-brand > span:last-child { display: none; }.nav-status { display: none; }
   .product-main { padding: var(--space-xl) var(--space-sm) var(--space-2xl); }
   .page-heading { grid-template-columns: 1fr; gap: var(--space-md); }.page-heading h1 { font-size: clamp(3.5rem, 19vw, 6rem); }.page-actions { justify-content: flex-start; }
+  .section-heading { flex-direction: column; align-items: flex-start; gap: var(--space-2xs); }
   .metric-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }.metric-strip > div + div { border-inline-start: 0; }.metric-strip > div:nth-child(even) { border-inline-start: var(--rule-hair) solid var(--color-rule); }.metric-strip > div:nth-child(n + 3) { border-top: var(--rule-hair) solid var(--color-rule); }
   .network-stage { min-height: 29rem; }.network-agent { width: 42%; flex-direction: column; align-items: flex-start; }.network-agent .agent-mark { width: 2.25rem; }.network-core { width: 7.5rem; }
   .zoo-bottom-grid, .task-board, .node-console, .agent-detail-grid { grid-template-columns: 1fr; }

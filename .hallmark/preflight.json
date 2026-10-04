@@ -1,9 +1,9 @@
 {
-  "date": "2026-10-04",
+  "date": "2026-10-05",
   "framework": "Next.js 16 App Router",
-  "fontStack": "Geist whisper-light display, Inter body, Geist Mono technical labels",
-  "palette": "Warm eggshell and taupe with a user-requested zoo-green and moss product signal",
-  "motion": "CSS-only, motion-cut except for functional loading feedback",
+  "fontStack": "Google Sans variable for display and UI, Google Sans Code for technical values",
+  "palette": "Midnight biome surfaces with acid-lime operational signals",
+  "motion": "CSS-only: functional signal flow, one-shot habitat entry, restrained living-animal drift",
   "spacing": "4px-derived semantic scale",
-  "source": "C:/Users/User/Downloads/DESIGN (1).md"
+  "source": "User-directed product redesign with supplied species SVG artwork"
 }
