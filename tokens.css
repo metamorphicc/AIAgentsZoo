@@ -1,0 +1,57 @@
+:root {
+  --color-eggshell: oklch(99.1% 0.002 45);
+  --color-warm-taupe: oklch(96.8% 0.006 60);
+  --color-stone: oklch(92.5% 0.009 65);
+  --color-button-rule: oklch(91.5% 0.006 55);
+  --color-ink: oklch(14% 0.007 50);
+  --color-graphite: oklch(34% 0.012 55);
+  --color-smoke: oklch(52% 0.014 60);
+  --color-ash: oklch(67% 0.012 60);
+  --color-violet-spark: oklch(54% 0.255 265);
+  --color-ember-orange: oklch(67% 0.22 42);
+  --color-focus: oklch(50% 0.22 265);
+  --color-error: oklch(47% 0.16 27);
+  --color-success: oklch(43% 0.09 155);
+  --color-accent-ink: var(--color-eggshell);
+
+  --font-display: var(--font-geist), ui-sans-serif, sans-serif;
+  --font-body: var(--font-inter), ui-sans-serif, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --text-caption: 0.75rem;
+  --text-body-sm: 0.875rem;
+  --text-body: 1rem;
+  --text-body-lg: 1.25rem;
+  --text-heading-sm: clamp(1.75rem, 3vw, 2rem);
+  --text-heading: clamp(2rem, 4vw, 2.75rem);
+  --text-display: clamp(2.75rem, 6vw, 4.75rem);
+
+  --space-2xs: 0.25rem;
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+  --space-3xl: 6rem;
+  --space-4xl: 10rem;
+
+  --radius-sm: 0.5rem;
+  --radius-card: 1.25rem;
+  --radius-panel: 1.5rem;
+  --radius-pill: 9999px;
+  --rule-hairline: 1px solid var(--color-stone);
+
+  --shadow-whisper: 0 1px 1px oklch(14% 0.007 50 / 0.04),
+    0 2px 4px oklch(14% 0.007 50 / 0.04);
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-micro: 120ms;
+  --dur-short: 220ms;
+  --dur-long: 420ms;
+
+  --page-max: 80rem;
+  --page-gutter: clamp(1rem, 5vw, 4rem);
+}

@@ -13,50 +13,50 @@ type SpeciesDefinition = {
 export const species: Record<SpeciesId, SpeciesDefinition> = {
   raven: {
     id: "raven",
-    name: "Ворон",
+    name: "Raven",
     emoji: "🐦‍⬛",
-    role: "Сборщик",
-    description: "Находит факты и источники, затем передаёт наблюдения строителю.",
-    defaultTask: "Найди три важных наблюдения по текущей теме зоопарка.",
+    role: "Scout",
+    description: "Finds verifiable signals and routes useful observations to builders.",
+    defaultTask: "Find three useful observations about the current habitat activity.",
     instructions:
-      "Ты Ворон — аккуратный сборщик. Выделяй проверяемые наблюдения, не выдумывай источники и передавай полезное Бобру.",
+      "You are Raven, a careful scout. Extract verifiable observations, never fabricate sources, and route useful signals to Beaver.",
   },
   beaver: {
     id: "beaver",
-    name: "Бобёр",
+    name: "Beaver",
     emoji: "🦫",
-    role: "Строитель",
-    description: "Превращает наблюдения в небольшие полезные артефакты.",
-    defaultTask: "Собери короткий артефакт из последних наблюдений Ворона.",
+    role: "Builder",
+    description: "Turns incoming observations into small, inspectable artifacts.",
+    defaultTask: "Build a short artifact from Raven’s latest observations.",
     instructions:
-      "Ты Бобёр — практичный строитель. Собирай ясный Markdown-артефакт только из полученных наблюдений.",
+      "You are Beaver, a practical builder. Create clear Markdown artifacts using only received observations.",
   },
   owl: {
     id: "owl",
-    name: "Сова",
+    name: "Owl",
     emoji: "🦉",
-    role: "Архивариус",
-    description: "Сжимает результаты в память и отмечает, что уже было сделано.",
-    defaultTask: "Суммируй последние результаты зоопарка в короткую запись памяти.",
+    role: "Archivist",
+    description: "Compresses outcomes into memory and records what the network has tried.",
+    defaultTask: "Summarize the habitat’s latest results into a short memory entry.",
     instructions:
-      "Ты Сова — архивариус. Сохраняй краткие фактические выводы и всегда указывай, из каких событий они получены.",
+      "You are Owl, the archivist. Store concise factual conclusions and identify the events they came from.",
   },
   meerkat: {
     id: "meerkat",
-    name: "Сурикат",
+    name: "Meerkat",
     emoji: "🦦",
-    role: "Дозорный",
-    description: "Следит за статусами, бюджетами и зависшими запусками.",
-    defaultTask: "Проверь здоровье животных и предупреди о проблемах.",
+    role: "Sentinel",
+    description: "Watches agent health, compute budgets, and stalled runs.",
+    defaultTask: "Check habitat health and report any operational risks.",
     instructions:
-      "Ты Сурикат — дозорный. Проверяй статусы и бюджеты. Не меняй чужие данные, только сообщай о проблемах.",
+      "You are Meerkat, the sentinel. Check statuses and budgets. Never modify another agent’s data; only report risks.",
   },
 };
 
 export const initialAgents: Agent[] = [
   {
     id: "raven-1",
-    name: "Ворон №1",
+    name: "Raven 01",
     species: "raven",
     emoji: species.raven.emoji,
     role: species.raven.role,
@@ -70,7 +70,7 @@ export const initialAgents: Agent[] = [
   },
   {
     id: "beaver-1",
-    name: "Бобёр №1",
+    name: "Beaver 01",
     species: "beaver",
     emoji: species.beaver.emoji,
     role: species.beaver.role,
@@ -84,7 +84,7 @@ export const initialAgents: Agent[] = [
   },
   {
     id: "owl-1",
-    name: "Сова №1",
+    name: "Owl 01",
     species: "owl",
     emoji: species.owl.emoji,
     role: species.owl.role,
@@ -98,7 +98,7 @@ export const initialAgents: Agent[] = [
   },
   {
     id: "meerkat-1",
-    name: "Сурикат №1",
+    name: "Meerkat 01",
     species: "meerkat",
     emoji: species.meerkat.emoji,
     role: species.meerkat.role,

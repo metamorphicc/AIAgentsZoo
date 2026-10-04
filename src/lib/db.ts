@@ -26,6 +26,11 @@ db.exec("PRAGMA journal_mode = WAL");
 db.exec("PRAGMA foreign_keys = ON");
 
 db.exec(`
+  CREATE TABLE IF NOT EXISTS app_metadata (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+  );
+
   CREATE TABLE IF NOT EXISTS agents (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
@@ -77,11 +82,42 @@ db.exec(`
     ON agent_runs(agent_id, created_at DESC);
 `);
 
+const storedLocale = db
+  .prepare("SELECT value FROM app_metadata WHERE key = 'content_locale'")
+  .get() as { value: string } | undefined;
+
+if (storedLocale?.value !== "en-v2") {
+  db.exec("BEGIN IMMEDIATE");
+  try {
+    db.exec(`
+      DELETE FROM artifacts;
+      DELETE FROM events;
+      DELETE FROM agent_runs;
+      UPDATE agents SET status = 'sleeping', feed = feed_max, last_awake_at = NULL;
+    `);
+    db.prepare(`
+      INSERT INTO app_metadata (key, value) VALUES ('content_locale', 'en-v2')
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value
+    `).run();
+    db.exec("COMMIT");
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
+  }
+}
+
 const insertAgent = db.prepare(`
-  INSERT OR IGNORE INTO agents (
+  INSERT INTO agents (
     id, name, species, emoji, role, description, status,
     feed, feed_max, task, last_awake_at, created_at
   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  ON CONFLICT(id) DO UPDATE SET
+    name = excluded.name,
+    species = excluded.species,
+    emoji = excluded.emoji,
+    role = excluded.role,
+    description = excluded.description,
+    task = excluded.task
 `);
 
 for (const agent of initialAgents) {
@@ -271,7 +307,7 @@ export function startAgentRun(input: {
     insertEvent({
       agentId: input.agentId,
       type: "woke_up",
-      summary: `Проснулся с задачей: ${input.task}`,
+      summary: `Awakened with task: ${input.task}`,
       payload: { runId: input.runId, provider: input.provider },
       createdAt: input.createdAt,
     });
@@ -342,7 +378,7 @@ export function completeAgentRun(input: {
     insertEvent({
       agentId: input.agentId,
       type: "went_to_sleep",
-      summary: `Завершил цикл: ${input.summary}`,
+      summary: `Cycle completed: ${input.summary}`,
       payload: { runId: input.runId },
       createdAt: input.completedAt,
     });
@@ -374,7 +410,7 @@ export function failAgentRun(input: {
     insertEvent({
       agentId: input.agentId,
       type: "warning",
-      summary: `Цикл завершился ошибкой: ${input.error}`,
+      summary: `Cycle failed: ${input.error}`,
       payload: { runId: input.runId },
       createdAt: input.completedAt,
     });

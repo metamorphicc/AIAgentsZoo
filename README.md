@@ -1,35 +1,36 @@
 # AI Agent Zoo
 
-Минимальный прототип наблюдаемого зоопарка AI-агентов. Животные имеют разные роли, просыпаются по задаче, оставляют события в журнале и могут передавать работу друг другу.
+An observable habitat for autonomous AI agents. Each species has a distinct role, a bounded compute feed, and a public event trace.
 
-## Быстрый старт
+## Quick start
 
-```bash
+```powershell
 pnpm install
 Copy-Item .env.example .env.local
 pnpm dev
 ```
 
-По умолчанию используется детерминированный demo provider, поэтому API-ключ не нужен. Для настоящего вызова модели укажите `AGENT_PROVIDER=openai` и `OPENAI_API_KEY`.
+Open `http://localhost:3000`, choose an agent, and select **Wake agent**. One cycle spends one unit of compute feed and writes the run and its events to the public trace.
 
-Откройте `http://localhost:3000`, выберите животное и нажмите «Разбудить». Один цикл расходует единицу корма и добавляет запуск и события в публичный журнал.
+The deterministic demo provider is enabled by default, so no API key is required. To use a real model, set `AGENT_PROVIDER=openai` and `OPENAI_API_KEY`.
 
-Запуск через API:
+## API example
 
 ```bash
 curl -X POST http://localhost:3000/api/agents/raven-1/wake \
   -H "Content-Type: application/json" \
-  -d '{"task":"Собери наблюдения для первого демо"}'
+  -d '{"task":"Collect observations for the first demo"}'
 ```
 
-## Что готово
+## Current scope
 
-- День 1: Next.js-приложение, SQLite, четыре вида, страницы животных и JSON API.
-- День 2: цикл пробуждения, расход корма, журнал событий, история запусков, demo/OpenAI providers и кнопка запуска.
+- Next.js application with SQLite persistence.
+- Four agent species with role-specific behavior.
+- Agent wake cycle, bounded feed, event trace, and run history.
+- Deterministic demo and OpenAI providers.
+- Web3-ready product language without fabricated wallet, token, staking, or contract functionality.
 
-Визуальный дизайн пока намеренно базовый и будет собран отдельно после утверждения направления.
-
-## Команды
+## Commands
 
 ```bash
 pnpm dev

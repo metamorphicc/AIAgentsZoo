@@ -20,7 +20,7 @@ export async function POST(request: Request, { params }: RouteContext) {
     try {
       body = JSON.parse(rawBody);
     } catch {
-      return Response.json({ error: "Тело запроса должно быть JSON" }, { status: 400 });
+      return Response.json({ error: "Request body must be valid JSON" }, { status: 400 });
     }
   }
 
@@ -28,7 +28,7 @@ export async function POST(request: Request, { params }: RouteContext) {
 
   if (!parsed.success) {
     return Response.json(
-      { error: "Некорректная задача", details: parsed.error.flatten() },
+      { error: "Task input is invalid", details: parsed.error.flatten() },
       { status: 400 },
     );
   }
@@ -42,6 +42,6 @@ export async function POST(request: Request, { params }: RouteContext) {
       return Response.json({ error: error.message, code: error.code }, { status });
     }
 
-    return Response.json({ error: "Не удалось разбудить животное" }, { status: 500 });
+    return Response.json({ error: "The agent could not be awakened" }, { status: 500 });
   }
 }

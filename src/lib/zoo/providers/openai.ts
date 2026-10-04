@@ -17,7 +17,7 @@ export async function createOpenAIDecision({
   recentEvents,
 }: OpenAIContext): Promise<AgentDecision> {
   if (!process.env.OPENAI_API_KEY) {
-    throw new Error("OPENAI_API_KEY не задан");
+    throw new Error("OPENAI_API_KEY is not configured");
   }
 
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -28,15 +28,15 @@ export async function createOpenAIDecision({
         role: "system",
         content: [
           species[agent.species].instructions,
-          "Верни не более трёх событий. Не выдумывай источники или выполненные действия.",
-          "targetAgentId может быть только raven-1, beaver-1, owl-1, meerkat-1 или null.",
+          "Return no more than three events. Never invent sources or completed actions.",
+          "targetAgentId must be raven-1, beaver-1, owl-1, meerkat-1, or null.",
         ].join("\n"),
       },
       {
         role: "user",
         content: [
-          `Задача: ${task}`,
-          "Последние события:",
+          `Task: ${task}`,
+          "Recent events:",
           JSON.stringify(recentEvents.slice(0, 10)),
         ].join("\n"),
       },
@@ -47,7 +47,7 @@ export async function createOpenAIDecision({
   });
 
   if (!response.output_parsed) {
-    throw new Error("Модель не вернула структурированное решение");
+    throw new Error("The model did not return a structured decision");
   }
 
   return response.output_parsed;

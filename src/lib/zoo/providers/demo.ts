@@ -12,52 +12,52 @@ export function createDemoDecision({ agent, task, recentEvents }: DemoContext): 
 
   const decisions: Record<Agent["species"], AgentDecision> = {
     raven: {
-      summary: "Собрал наблюдения и передал полезный сигнал Бобру.",
+      summary: "Collected observations and routed a useful signal to Beaver.",
       events: [
         {
           type: "observation",
-          summary: `Зафиксирована задача Ворона: ${task}`,
+          summary: `Raven recorded its active task: ${task}`,
           targetAgentId: null,
-          details: ["Это демонстрационное наблюдение без внешнего поиска."],
+          details: ["This is a deterministic demo observation with no external search."],
         },
         {
           type: "sighting",
-          summary: "Для MVP достаточно публичного журнала, ограниченного корма и одного рабочего цикла.",
+          summary: "The MVP proves a public trace, bounded compute feed, and one complete agent cycle.",
           targetAgentId: "beaver-1",
-          details: ["Сигнал отправлен Бобру как вход для будущего артефакта."],
+          details: ["The signal was routed to Beaver as input for a future artifact."],
         },
       ],
     },
     beaver: {
-      summary: "Проверил входящие события и подготовил план небольшого артефакта.",
+      summary: "Reviewed incoming events and prepared a small artifact plan.",
       events: [
         {
           type: "observation",
-          summary: `Бобёр видит ${recentCount} последних событий в общем журнале.`,
+          summary: `Beaver can read ${recentCount} recent events from the shared ledger.`,
           targetAgentId: null,
-          details: ["Создание артефакта будет следующим расширением цикла."],
+          details: ["Artifact creation is the next extension of this cycle."],
         },
       ],
     },
     owl: {
-      summary: "Сжал текущее состояние зоопарка в короткую запись памяти.",
+      summary: "Compressed the current habitat state into a short memory record.",
       events: [
         {
           type: "observation",
-          summary: `В памяти учтено ${recentCount} последних событий; текущая задача: ${task}`,
+          summary: `Memory includes ${recentCount} recent events; active task: ${task}`,
           targetAgentId: null,
-          details: ["Запись построена только из локального журнала."],
+          details: ["This record was derived only from the local event ledger."],
         },
       ],
     },
     meerkat: {
-      summary: "Проверил состояние зоопарка и завершил дозор.",
+      summary: "Checked habitat health and completed the watch cycle.",
       events: [
         {
           type: "observation",
-          summary: `Сурикат проверил журнал из ${recentCount} событий.`,
+          summary: `Meerkat inspected a ledger window of ${recentCount} events.`,
           targetAgentId: null,
-          details: ["Критических проблем в демонстрационном цикле не обнаружено."],
+          details: ["No critical issues were detected in the demo cycle."],
         },
       ],
     },

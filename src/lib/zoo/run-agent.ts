@@ -27,7 +27,7 @@ export class AgentRunError extends Error {
 export async function runAgentCycle(agentId: string, taskOverride?: string) {
   const agent = getAgent(agentId);
 
-  if (!agent) throw new AgentRunError("NOT_FOUND", "Животное не найдено");
+  if (!agent) throw new AgentRunError("NOT_FOUND", "Agent not found");
 
   const task = taskOverride?.trim() || agent.task;
   const provider = process.env.AGENT_PROVIDER === "openai" ? "openai" : "demo";
@@ -40,15 +40,15 @@ export async function runAgentCycle(agentId: string, taskOverride?: string) {
     const message = error instanceof Error ? error.message : String(error);
 
     if (message === "AGENT_NOT_FOUND") {
-      throw new AgentRunError("NOT_FOUND", "Животное не найдено");
+      throw new AgentRunError("NOT_FOUND", "Agent not found");
     }
     if (message === "NO_FEED") {
-      throw new AgentRunError("NO_FEED", "У животного закончился корм");
+      throw new AgentRunError("NO_FEED", "This agent has no compute feed left");
     }
     if (message.startsWith("AGENT_UNAVAILABLE:")) {
       throw new AgentRunError(
         "UNAVAILABLE",
-        `Животное сейчас недоступно: ${message.split(":")[1]}`,
+        `Agent is currently unavailable: ${message.split(":")[1]}`,
       );
     }
     throw error;
@@ -88,7 +88,7 @@ export async function runAgentCycle(agentId: string, taskOverride?: string) {
       events: getAgentEvents(agentId, 10),
     };
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Неизвестная ошибка";
+    const message = error instanceof Error ? error.message : "Unknown runtime error";
 
     failAgentRun({
       agentId,

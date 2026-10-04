@@ -9,7 +9,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
   const agent = getAgent(id);
 
   if (!agent) {
-    return Response.json({ error: "Животное не найдено" }, { status: 404 });
+    return Response.json({ error: "Agent not found" }, { status: 404 });
   }
 
   return Response.json({
