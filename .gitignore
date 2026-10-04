@@ -1,0 +1,28 @@
+# dependencies
+node_modules/
+
+# next.js
+.next/
+out/
+
+# local data and secrets
+.env
+.env.local
+.env.*.local
+data/*.db
+data/*.db-shm
+data/*.db-wal
+
+# test output
+coverage/
+playwright-report/
+
+# editor and OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# logs
+*.log
+pnpm-debug.log*
