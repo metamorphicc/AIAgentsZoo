@@ -6,7 +6,9 @@ import {
   getAgent,
   getAgentEvents,
   getAgentRuns,
+  getArtifacts,
   getRecentEvents,
+  insertArtifact,
   insertEvent,
   startAgentRun,
 } from "@/lib/db";
@@ -75,6 +77,34 @@ export async function runAgentCycle(agentId: string, taskOverride?: string) {
       });
     }
 
+    if (agent.species === "beaver") {
+      const lastArtifactAt = getArtifacts(20)
+        .find((artifact) => artifact.agentId === agent.id)?.createdAt;
+      const incomingSignals = recentEvents
+        .filter((event) =>
+          event.targetAgentId === agent.id
+          && (!lastArtifactAt || event.createdAt > lastArtifactAt)
+        )
+        .slice(0, 3);
+
+      if (incomingSignals.length > 0) {
+        const artifact = insertArtifact({
+          agentId,
+          title: "Habitat field note",
+          body: incomingSignals
+            .map((event) => `- ${event.summary}`)
+            .join("\n"),
+        });
+
+        insertEvent({
+          agentId,
+          type: "artifact",
+          summary: `Beaver published “${artifact.title}” from ${incomingSignals.length} incoming signal${incomingSignals.length === 1 ? "" : "s"}.`,
+          payload: { artifactId: artifact.id, sourceEventIds: incomingSignals.map((event) => event.id), runId },
+        });
+      }
+    }
+
     completeAgentRun({
       agentId,
       runId,
@@ -86,6 +116,7 @@ export async function runAgentCycle(agentId: string, taskOverride?: string) {
       agent: getAgent(agentId),
       run: getAgentRuns(agentId, 1)[0],
       events: getAgentEvents(agentId, 10),
+      artifacts: getArtifacts(10).filter((artifact) => artifact.agentId === agentId),
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown runtime error";

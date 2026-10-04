@@ -272,6 +272,34 @@ export function getArtifacts(limit = 20): Artifact[] {
   ).map(mapArtifact);
 }
 
+export function insertArtifact(input: {
+  agentId: string;
+  title: string;
+  body: string;
+  createdAt?: string;
+}): Artifact {
+  const artifact: Artifact = {
+    id: randomUUID(),
+    agentId: input.agentId,
+    title: input.title,
+    body: input.body,
+    createdAt: input.createdAt ?? new Date().toISOString(),
+  };
+
+  db.prepare(`
+    INSERT INTO artifacts (id, agent_id, title, body, created_at)
+    VALUES (?, ?, ?, ?, ?)
+  `).run(
+    artifact.id,
+    artifact.agentId,
+    artifact.title,
+    artifact.body,
+    artifact.createdAt,
+  );
+
+  return artifact;
+}
+
 export function startAgentRun(input: {
   agentId: string;
   runId: string;
