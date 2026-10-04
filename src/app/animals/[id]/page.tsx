@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { WakeAgentButton } from "@/components/wake-agent-button";
 import { getAgent, getAgentEvents, getAgentRuns } from "@/lib/db";
 import { formatDate } from "@/lib/format";
 
@@ -54,6 +55,11 @@ export default async function AgentPage({ params }: AgentPageProps) {
           <dd>{agent.task}</dd>
         </div>
       </dl>
+
+      <WakeAgentButton
+        agentId={agent.id}
+        disabled={agent.status !== "sleeping" || agent.feed <= 0}
+      />
 
       <section>
         <h2>Запуски</h2>

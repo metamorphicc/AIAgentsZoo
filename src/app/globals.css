@@ -57,3 +57,21 @@ dt {
 dd {
   margin: 0.25rem 0 0;
 }
+
+button {
+  padding: 0.65rem 1rem;
+  font: inherit;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+.wake-control {
+  margin-top: 1.5rem;
+}
+
+.wake-control p {
+  margin-block: 0.75rem 0;
+}

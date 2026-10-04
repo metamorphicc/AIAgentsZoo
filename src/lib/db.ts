@@ -1,4 +1,5 @@
 import { mkdirSync } from "node:fs";
+import { randomUUID } from "node:crypto";
 import { dirname, join, resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
@@ -233,4 +234,154 @@ export function getArtifacts(limit = 20): Artifact[] {
   return (
     db.prepare("SELECT * FROM artifacts ORDER BY created_at DESC LIMIT ?").all(limit) as ArtifactRow[]
   ).map(mapArtifact);
+}
+
+export function startAgentRun(input: {
+  agentId: string;
+  runId: string;
+  provider: AgentRun["provider"];
+  task: string;
+  createdAt: string;
+}): AgentRun {
+  db.exec("BEGIN IMMEDIATE");
+
+  try {
+    const result = db
+      .prepare(`
+        UPDATE agents
+        SET status = 'working', feed = feed - 1, last_awake_at = ?
+        WHERE id = ? AND status = 'sleeping' AND feed > 0
+      `)
+      .run(input.createdAt, input.agentId);
+
+    if (Number(result.changes) === 0) {
+      const agent = getAgent(input.agentId);
+
+      if (!agent) throw new Error("AGENT_NOT_FOUND");
+      if (agent.feed <= 0) throw new Error("NO_FEED");
+      throw new Error(`AGENT_UNAVAILABLE:${agent.status}`);
+    }
+
+    db.prepare(`
+      INSERT INTO agent_runs (
+        id, agent_id, task, provider, status, created_at
+      ) VALUES (?, ?, ?, ?, 'running', ?)
+    `).run(input.runId, input.agentId, input.task, input.provider, input.createdAt);
+
+    insertEvent({
+      agentId: input.agentId,
+      type: "woke_up",
+      summary: `Проснулся с задачей: ${input.task}`,
+      payload: { runId: input.runId, provider: input.provider },
+      createdAt: input.createdAt,
+    });
+
+    db.exec("COMMIT");
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
+  }
+
+  return getAgentRuns(input.agentId, 1)[0];
+}
+
+export function insertEvent(input: {
+  agentId: string;
+  targetAgentId?: string | null;
+  type: ZooEvent["type"];
+  summary: string;
+  payload?: Record<string, unknown>;
+  createdAt?: string;
+}): ZooEvent {
+  const event: ZooEvent = {
+    id: randomUUID(),
+    agentId: input.agentId,
+    targetAgentId: input.targetAgentId ?? null,
+    type: input.type,
+    summary: input.summary,
+    payload: input.payload ?? {},
+    createdAt: input.createdAt ?? new Date().toISOString(),
+  };
+
+  db.prepare(`
+    INSERT INTO events (
+      id, agent_id, target_agent_id, type, summary, payload_json, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    event.id,
+    event.agentId,
+    event.targetAgentId,
+    event.type,
+    event.summary,
+    JSON.stringify(event.payload),
+    event.createdAt,
+  );
+
+  return event;
+}
+
+export function completeAgentRun(input: {
+  agentId: string;
+  runId: string;
+  summary: string;
+  completedAt: string;
+}): void {
+  db.exec("BEGIN IMMEDIATE");
+
+  try {
+    db.prepare(`
+      UPDATE agent_runs
+      SET status = 'completed', summary = ?, completed_at = ?
+      WHERE id = ?
+    `).run(input.summary, input.completedAt, input.runId);
+
+    db.prepare(`
+      UPDATE agents SET status = 'sleeping', last_awake_at = ? WHERE id = ?
+    `).run(input.completedAt, input.agentId);
+
+    insertEvent({
+      agentId: input.agentId,
+      type: "went_to_sleep",
+      summary: `Завершил цикл: ${input.summary}`,
+      payload: { runId: input.runId },
+      createdAt: input.completedAt,
+    });
+
+    db.exec("COMMIT");
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
+  }
+}
+
+export function failAgentRun(input: {
+  agentId: string;
+  runId: string;
+  error: string;
+  completedAt: string;
+}): void {
+  db.exec("BEGIN IMMEDIATE");
+
+  try {
+    db.prepare(`
+      UPDATE agent_runs
+      SET status = 'failed', error = ?, completed_at = ?
+      WHERE id = ?
+    `).run(input.error, input.completedAt, input.runId);
+
+    db.prepare("UPDATE agents SET status = 'error' WHERE id = ?").run(input.agentId);
+
+    insertEvent({
+      agentId: input.agentId,
+      type: "warning",
+      summary: `Цикл завершился ошибкой: ${input.error}`,
+      payload: { runId: input.runId },
+      createdAt: input.completedAt,
+    });
+
+    db.exec("COMMIT");
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
+  }
 }
