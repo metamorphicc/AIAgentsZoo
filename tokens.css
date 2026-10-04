@@ -1,17 +1,22 @@
 :root {
-  --color-eggshell: oklch(99.1% 0.002 45);
-  --color-warm-taupe: oklch(96.8% 0.006 60);
-  --color-stone: oklch(92.5% 0.009 65);
-  --color-button-rule: oklch(91.5% 0.006 55);
-  --color-ink: oklch(14% 0.007 50);
-  --color-graphite: oklch(34% 0.012 55);
-  --color-smoke: oklch(52% 0.014 60);
-  --color-ash: oklch(67% 0.012 60);
-  --color-violet-spark: oklch(54% 0.255 265);
-  --color-ember-orange: oklch(67% 0.22 42);
-  --color-focus: oklch(50% 0.22 265);
+  --color-eggshell: oklch(98.8% 0.006 115);
+  --color-warm-taupe: oklch(96.2% 0.012 112);
+  --color-stone: oklch(91.8% 0.018 118);
+  --color-button-rule: oklch(88% 0.025 125);
+  --color-ink: oklch(17% 0.018 145);
+  --color-graphite: oklch(34% 0.022 145);
+  --color-smoke: oklch(42% 0.02 140);
+  --color-ash: oklch(65% 0.018 135);
+  --color-zoo-green: oklch(43% 0.13 148);
+  --color-zoo-green-deep: oklch(34% 0.105 148);
+  --color-moss-wash: oklch(94% 0.032 135);
+  --color-moss-field: oklch(88% 0.048 138);
+  --color-moss-rule: oklch(79% 0.045 140);
+  --color-violet-spark: var(--color-zoo-green);
+  --color-ember-orange: var(--color-moss-rule);
+  --color-focus: oklch(42% 0.16 148);
   --color-error: oklch(47% 0.16 27);
-  --color-success: oklch(43% 0.09 155);
+  --color-success: var(--color-zoo-green);
   --color-accent-ink: var(--color-eggshell);
 
   --font-display: var(--font-geist), ui-sans-serif, sans-serif;
@@ -42,8 +47,9 @@
   --radius-pill: 9999px;
   --rule-hairline: 1px solid var(--color-stone);
 
-  --shadow-whisper: 0 1px 1px oklch(14% 0.007 50 / 0.04),
-    0 2px 4px oklch(14% 0.007 50 / 0.04);
+  --shadow-whisper: 0 1px 1px oklch(17% 0.018 145 / 0.04),
+    0 2px 4px oklch(17% 0.018 145 / 0.04);
+  --shadow-panel: 0 14px 36px oklch(17% 0.018 145 / 0.07);
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
@@ -52,6 +58,15 @@
   --dur-short: 220ms;
   --dur-long: 420ms;
 
-  --page-max: 80rem;
+  --page-max: 96rem;
   --page-gutter: clamp(1rem, 5vw, 4rem);
+  --rail-width: 14rem;
+
+  --z-base: 1;
+  --z-raised: 10;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-modal: 400;
+  --z-toast: 500;
+  --z-tooltip: 600;
 }

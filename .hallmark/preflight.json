@@ -2,7 +2,7 @@
   "date": "2026-10-04",
   "framework": "Next.js 16 App Router",
   "fontStack": "Geist whisper-light display, Inter body, Geist Mono technical labels",
-  "palette": "User-supplied warm eggshell, taupe, ink, violet and orange product signals",
+  "palette": "Warm eggshell and taupe with a user-requested zoo-green and moss product signal",
   "motion": "CSS-only, motion-cut except for functional loading feedback",
   "spacing": "4px-derived semantic scale",
   "source": "C:/Users/User/Downloads/DESIGN (1).md"

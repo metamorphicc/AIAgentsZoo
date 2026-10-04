@@ -1,6 +1,15 @@
 [
   {
     "date": "2026-10-04",
+    "macrostructure": "Map / Diagram",
+    "theme": "custom",
+    "theme_axes": "light / geometric-sans / chromatic-green",
+    "vibe": "field station, living network, botanical restraint",
+    "enrichment": "none — map is product UI",
+    "brief": "Product-first operational dashboard for the autonomous agent zoo"
+  },
+  {
+    "date": "2026-10-04",
     "macrostructure": "Workbench",
     "theme": "supplied warm editorial system",
     "enrichment": "tier-A CSS network",
