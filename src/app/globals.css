@@ -13,3 +13,47 @@ main {
   margin: 0 auto;
   padding: 2rem;
 }
+
+a {
+  color: inherit;
+}
+
+section {
+  margin-block: 3rem;
+}
+
+.agent-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 1rem;
+  padding: 0;
+  list-style: none;
+}
+
+.agent-list li {
+  padding: 1rem;
+  border: 1px solid currentColor;
+}
+
+.agent-list a {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.agent-emoji {
+  font-size: 4rem;
+}
+
+dl {
+  display: grid;
+  gap: 1rem;
+}
+
+dt {
+  font-weight: 700;
+}
+
+dd {
+  margin: 0.25rem 0 0;
+}
