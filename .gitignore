@@ -27,3 +27,8 @@ Thumbs.db
 *.log
 pnpm-debug.log*
 *.tsbuildinfo
+
+# generated tooling caches and Blender backups
+__pycache__/
+*.py[cod]
+*.blend1
