@@ -22,7 +22,7 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
         eyebrow={`Agent registry / ${agent.id}`}
         title={agent.name.toUpperCase()}
         description={agent.description}
-        actions={<Link className="action-button" href="/agents">ALL AGENTS</Link>}
+        actions={<>{agent.species === "owl" ? <Link className="action-button action-button--accent" href="/lab/owl">OPEN 3D HABITAT</Link> : null}<Link className="action-button" href="/agents">ALL AGENTS</Link></>}
       />
 
       <section className="agent-command-panel">
