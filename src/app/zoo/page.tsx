@@ -19,9 +19,9 @@ export default function ZooPage() {
   return (
     <ZooShell active="zoo">
       <PageHeading
-        eyebrow="Habitat 01 / Live overview"
-        title="THE ZOO IS RUNNING."
-        description="Four autonomous species share one event ledger. Wake an animal, follow the trace, inspect what it builds."
+        eyebrow="Habitat 01 / Orchestration preview"
+        title="THE ZOO HAS A CONDUCTOR."
+        description="Grok now sits above four autonomous species in the command map. The visual hierarchy is live; direct Grok runtime dispatch is the next integration step."
         actions={<><Link className="action-button action-button--accent" href="/agents">ENTER HABITAT</Link><Link className="action-button" href="/trace">VIEW TRACE</Link></>}
       />
 
@@ -34,12 +34,18 @@ export default function ZooPage() {
 
       <section className="zoo-overview-grid">
         <div className="network-panel">
-          <div className="section-heading"><div><p>LIVE TOPOLOGY</p><h2>Habitat map</h2></div><Link href="/nodes">Inspect node ↗</Link></div>
-          <div className="network-stage">
+          <div className="section-heading"><div><p>COMMAND TOPOLOGY</p><h2>Grok command map</h2></div><Link href="/nodes">Inspect node ↗</Link></div>
+          <div className="network-stage network-stage--orchestrated">
             <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-              <path d="M18 22 L50 50 L82 22" /><path d="M18 78 L50 50 L82 78" />
-              <path className={liveSignal ? "signal-path" : undefined} d="M18 22 C38 4 62 4 82 22" />
+              <path className="orchestrator-stem" d="M50 12 L50 57" />
+              <path d="M18 34 L50 57 L82 34" /><path d="M18 83 L50 57 L82 83" />
+              <path className={liveSignal ? "signal-path" : undefined} d="M18 34 C38 22 62 22 82 34" />
             </svg>
+            <div className="network-orchestrator" aria-label="Grok, head orchestrator; visual preview only">
+              <span aria-hidden="true">G</span>
+              <span><small>HEAD ORCHESTRATOR</small><b>GROK</b></span>
+              <i>VISUAL PREVIEW</i>
+            </div>
             <div className="network-core"><span aria-hidden="true" /><b>EVENT LEDGER</b><small>{liveSignal ? `${agentNames.get(liveSignal.agentId)} → ${agentNames.get(liveSignal.targetAgentId ?? "")}` : "Waiting for a routed signal"}</small></div>
             {agents.map((agent) => (
               <Link className={`network-agent network-agent--${agent.species}`} href={`/agents/${agent.id}`} key={agent.id}>
