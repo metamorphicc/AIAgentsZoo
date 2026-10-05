@@ -4,6 +4,15 @@
     "macrostructure": "Animal passport",
     "theme": "studied-DNA",
     "theme_axes": "dark / rounded-geometric / acid-lime",
+    "vibe": "four living species, one shared system",
+    "enrichment": "four rigged interactive 3D animals",
+    "brief": "Extend the established animal passport to every zoo species with natural species-specific motion."
+  },
+  {
+    "date": "2026-10-05",
+    "macrostructure": "Animal passport",
+    "theme": "studied-DNA",
+    "theme_axes": "dark / rounded-geometric / acid-lime",
     "vibe": "persistent living specimen record",
     "enrichment": "embedded interactive 3D animal",
     "brief": "Move the 3D animal into a permanent 30/70 passport layout and rename the registry UI to Animals."

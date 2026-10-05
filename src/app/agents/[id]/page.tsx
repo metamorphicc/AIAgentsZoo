@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { Owl3DViewport } from "@/components/owl-3d-lab";
+import { Animal3DViewport } from "@/components/owl-3d-lab";
 import { AgentMark, EmptyState } from "@/components/product-ui";
 import { WakeAgentButton } from "@/components/wake-agent-button";
 import { ZooShell } from "@/components/zoo-shell";
@@ -49,18 +49,7 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
         </aside>
 
         <div className="animal-passport-model">
-          {agent.species === "owl" ? (
-            <Owl3DViewport />
-          ) : (
-            <div className="animal-model-pending">
-              <AgentMark agent={agent} />
-              <div>
-                <span>3D specimen status</span>
-                <strong>Model in production</strong>
-                <p>The live habitat is ready. This animal is waiting for its rigged 3D body.</p>
-              </div>
-            </div>
-          )}
+          <Animal3DViewport name={agent.name} role={agent.role} species={agent.species} />
         </div>
       </section>
 

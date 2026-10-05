@@ -1,4 +1,4 @@
-/* Hallmark · genre: atmospheric · macrostructure: Animal passport · tone: alive, exact, crypto-native · audience: agent operators and web3 builders · use: inspect and run one autonomous animal in its habitat · theme: studied-DNA (source: higgspad.com), adapted as “midnight biome” · axes: dark / rounded-geometric / acid-lime · enrichment: persistent interactive 3D specimen · nav: N1b adapted three-section · footer: Ft2 · contrast: pass (40–41) · slop: pass (42–49) · honest: pass (46) · chrome: pass (47) · tokens: pass (48) · responsive: pass (34, 49, 50–57) · mobile: pass (34, 49, 50–57) · icons: pass (30) */
+/* Hallmark · genre: atmospheric · macrostructure: Animal passport · tone: alive, exact, crypto-native · audience: agent operators and web3 builders · use: inspect and run one autonomous animal in its habitat · theme: studied-DNA (source: higgspad.com), adapted as “midnight biome” · axes: dark / rounded-geometric / acid-lime · enrichment: persistent interactive 3D species habitats · nav: N1b adapted three-section · footer: Ft2 · contrast: pass (40–41) · slop: pass (42–49) · honest: pass (46) · chrome: pass (47) · tokens: pass (48) · responsive: pass (34, 49, 50–57) · mobile: pass (34, 49, 50–57) · icons: pass (30) */
 /* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5 */
 @import "../../tokens.css";
 
@@ -896,10 +896,11 @@ body {
 .animal-passport-summary .wake-control p { margin-top: var(--space-xs); color: var(--color-muted); font-size: var(--text-xs); }
 
 .animal-passport-model { min-width: 0; min-height: 32rem; display: flex; background: var(--color-paper); }
-.animal-model-shell { min-width: 0; min-height: inherit; flex: 1; display: grid; grid-template-rows: auto minmax(25rem, 1fr) auto; color: var(--color-ink); }
+.animal-model-shell { min-width: 0; min-height: inherit; flex: 1; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(25rem, 1fr) auto; color: var(--color-ink); }
 
 .animal-model-toolbar,
 .animal-model-controls {
+  min-width: 0;
   min-height: 5rem;
   display: flex;
   align-items: center;
@@ -947,6 +948,7 @@ body {
   font-family: var(--font-body);
   font-size: var(--text-xs);
   font-weight: 650;
+  white-space: nowrap;
   transition: border-color var(--dur-short) var(--ease-out), background-color var(--dur-short) var(--ease-out), color var(--dur-short) var(--ease-out);
 }
 .animal-model-actions button[aria-pressed="true"] { border-color: var(--color-accent); background: var(--color-accent); color: var(--color-accent-ink); }
@@ -1160,7 +1162,7 @@ body {
   .agent-command-panel { grid-template-columns: 1fr 1fr; }.agent-command-identity { grid-column: 1 / -1; }.command-stat { padding-inline: 0; border-left: 0; }.agent-command-panel .wake-control { grid-column: 1 / -1; }
   .task-panel dl { grid-template-columns: 1fr; }
   .animal-model-toolbar, .animal-model-controls { align-items: flex-start; flex-direction: column; padding: var(--space-sm); }
-  .animal-model-actions { width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .animal-model-actions { width: 100%; min-width: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .animal-model-actions button { min-height: 2.75rem; }
   .animal-model-hint { right: var(--space-sm); bottom: var(--space-sm); }
   .animal-model-pending { align-items: flex-start; flex-direction: column; justify-content: flex-end; padding: var(--space-md); }
