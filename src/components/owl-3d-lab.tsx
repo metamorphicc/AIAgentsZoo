@@ -18,10 +18,10 @@ type AnimalProfile = {
 const animalProfiles = {
   raven: {
     actions: ["Idle", "Scan", "Call", "Signal"],
-    camera: [5.6, 3.5, 7],
+    camera: [7.2, 3.1, 6.8],
     modelPath: "/models/raven-agent.glb",
     scale: 1,
-    target: [0, 1.65, 0],
+    target: [0, 1.3, 0],
   },
   beaver: {
     actions: ["Idle", "Gnaw", "Tail Sweep", "Build"],

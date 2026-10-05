@@ -9,12 +9,14 @@ from zoo_model_utils import (
     create_rig,
     cube,
     cylinder,
+    cylinder_between,
     feather_row,
     ico,
     material,
     reset_scene,
     save_and_export,
     set_preview_scene,
+    wedge,
 )
 
 
@@ -101,38 +103,76 @@ def build_raven():
     reset_scene()
     black = material("Plumage / blue black", (0.012, 0.02, 0.026), metallic=0.08, roughness=0.52)
     blue = material("Plumage / iridescent edge", (0.035, 0.09, 0.13), metallic=0.18, roughness=0.42)
-    charcoal = material("Beak / charcoal", (0.04, 0.045, 0.04), roughness=0.48)
+    charcoal = material("Beak / charcoal", (0.055, 0.06, 0.055), roughness=0.48)
     ink = material("Eyes / black", (0.003, 0.004, 0.004), roughness=0.22)
     lime = material("Eyes / agent signal", (0.68, 1.0, 0.1), metallic=0.12, roughness=0.22)
     leg = material("Feet / graphite", (0.09, 0.09, 0.075), roughness=0.7)
     rig = create_rig("Raven", [
-        ("root", (0, 0, 0), (0, 0, 0.5), None), ("body", (0, 0, 0.5), (0, 0, 2.35), "root"),
-        ("head", (0, 0, 2.25), (0, 0, 3.3), "body"), ("jaw", (0, -0.62, 2.55), (0, -1.0, 2.55), "head"),
-        ("wing.L", (0.4, 0, 2.1), (1.2, 0, 1.25), "body"), ("wing.R", (-0.4, 0, 2.1), (-1.2, 0, 1.25), "body"),
-        ("tail", (0, 0.25, 0.95), (0, 0.55, 0.15), "body"),
+        ("root", (0, 0, 0), (0, 0, 0.45), None),
+        ("body", (0, 0.08, 0.55), (0, 0.08, 1.65), "root"),
+        ("head", (0, -0.92, 1.42), (0, -0.92, 2.12), "body"),
+        ("jaw", (0, -1.48, 1.62), (0, -1.9, 1.58), "head"),
+        ("wing.L", (0.42, -0.35, 1.48), (0.7, 0.72, 1.2), "body"),
+        ("wing.R", (-0.42, -0.35, 1.48), (-0.7, 0.72, 1.2), "body"),
+        ("tail", (0, 0.7, 1.15), (0, 1.55, 1.0), "body"),
     ])
-    body = [ico("Raven_Body", (0, 0, 1.45), (0.82, 0.62, 1.2), black), ico("Raven_Chest", (0, -0.5, 1.5), (0.53, 0.15, 0.78), blue)]
-    feather_row("Chest_Ruff", (0, -0.64, 1.93), 5, 0.18, (0.1, 0.05, 0.19), blue, body)
-    head = [ico("Raven_Head", (0, -0.02, 2.67), (0.78, 0.62, 0.67), black), cone("Upper_Beak", (0, -0.93, 2.58), 0.23, 0.86, charcoal, rotation=(R(90), 0, 0), vertices=6)]
+    body = [
+        ico("Raven_Body", (0, 0.08, 1.24), (0.66, 1.16, 0.69), black),
+        ico("Raven_Shoulders", (0, -0.58, 1.49), (0.6, 0.62, 0.58), black),
+        ico("Raven_Chest", (0, -0.82, 1.27), (0.48, 0.28, 0.5), blue),
+    ]
+    feather_row("Chest_Ruff", (0, -1.02, 1.48), 5, 0.16, (0.09, 0.05, 0.16), blue, body)
+    head = [
+        ico("Raven_Head", (0, -1.12, 1.75), (0.57, 0.61, 0.53), black),
+        ico("Raven_Brow", (0, -1.47, 1.91), (0.48, 0.22, 0.2), black, subdivisions=1),
+        wedge("Upper_Beak", (0, -1.46, 1.69), (0, -2.12, 1.59), (0.43, 0.21), (0.055, 0.075), charcoal),
+    ]
     for side in (-1, 1):
-        head += [ico(f"Eye_{side}", (0.31 * side, -0.56, 2.8), (0.13, 0.07, 0.145), ink), ico(f"Pupil_{side}", (0.31 * side, -0.625, 2.82), (0.052, 0.027, 0.06), lime)]
-        body.append(cylinder(f"Leg_{side}", (0.28 * side, 0, 0.37), 0.055, 0.48, leg, vertices=6))
-        for toe in (-0.09, 0, 0.09):
-            body.append(cylinder(f"Toe_{side}_{toe}", (0.28 * side + toe, -0.14, 0.15), 0.025, 0.34, leg, rotation=(R(76), 0, 0), vertices=5))
-    jaw = [cone("Lower_Beak", (0, -0.82, 2.47), 0.16, 0.62, charcoal, rotation=(R(86), 0, 0), vertices=6)]
-    wing_l = [ico("Wing_L", (0.78, 0.02, 1.5), (0.34, 0.32, 1.05), black, rotation=(0, R(-18), R(-8)))]
-    wing_r = [ico("Wing_R", (-0.78, 0.02, 1.5), (0.34, 0.32, 1.05), black, rotation=(0, R(18), R(8)))]
-    for z in (1.1, 1.4, 1.7):
-        wing_l.append(ico(f"Wing_L_Quill_{z}", (0.91, -0.3, z), (0.09, 0.06, 0.36), blue, subdivisions=1))
-        wing_r.append(ico(f"Wing_R_Quill_{z}", (-0.91, -0.3, z), (0.09, 0.06, 0.36), blue, subdivisions=1))
-    tail = [cone(f"Tail_Quill_{i}", (x, 0.28, 0.48), 0.16, 1.05, blue, rotation=(0, 0, R(180))) for i, x in enumerate((-0.32, -0.16, 0, 0.16, 0.32))]
+        head += [
+            ico(f"Eye_{side}", (0.39 * side, -1.43, 1.87), (0.115, 0.065, 0.125), ink),
+            ico(f"Pupil_{side}", (0.39 * side, -1.49, 1.88), (0.045, 0.026, 0.052), lime),
+            ico(f"Nostril_{side}", (0.14 * side, -1.65, 1.75), (0.042, 0.024, 0.026), ink, subdivisions=1),
+        ]
+        leg_x = 0.27 * side
+        ankle = (leg_x, -0.02, 0.26)
+        body.append(cylinder_between(f"Leg_{side}", (leg_x, 0.12, 0.72), ankle, 0.046, leg, vertices=6))
+        for toe_index, (spread_x, reach_y) in enumerate(((-0.14, -0.38), (0, -0.43), (0.14, -0.36))):
+            knuckle = (leg_x + spread_x * 0.48, -0.17, 0.19)
+            toe_tip = (leg_x + spread_x, reach_y, 0.14)
+            claw_tip = (leg_x + spread_x, reach_y - 0.08, 0.105)
+            body.append(cylinder_between(f"Toe_{side}_{toe_index}_A", ankle, knuckle, 0.025, leg, vertices=5))
+            body.append(cylinder_between(f"Toe_{side}_{toe_index}_B", knuckle, toe_tip, 0.019, leg, vertices=5))
+            body.append(cylinder_between(f"Claw_{side}_{toe_index}", toe_tip, claw_tip, 0.012, ink, vertices=5))
+        rear_knuckle = (leg_x, 0.13, 0.18)
+        rear_tip = (leg_x, 0.26, 0.13)
+        body.append(cylinder_between(f"Rear_Toe_{side}_A", ankle, rear_knuckle, 0.023, leg, vertices=5))
+        body.append(cylinder_between(f"Rear_Toe_{side}_B", rear_knuckle, rear_tip, 0.016, leg, vertices=5))
+    jaw = [
+        wedge("Lower_Beak", (0, -1.47, 1.56), (0, -2.02, 1.56), (0.35, 0.065), (0.045, 0.035), charcoal),
+    ]
+    wing_l = [ico("Wing_L", (0.61, 0.02, 1.33), (0.24, 1.03, 0.46), black, rotation=(0, R(-6), R(-4)))]
+    wing_r = [ico("Wing_R", (-0.61, 0.02, 1.33), (0.24, 1.03, 0.46), black, rotation=(0, R(6), R(4)))]
+    for index, offset in enumerate((-0.18, 0.0, 0.18)):
+        wing_l.append(ico(f"Wing_L_Quill_{index}", (0.73, 0.24 + offset, 1.2 - index * 0.06), (0.09, 0.75, 0.14), blue, rotation=(0, R(-6), R(-4)), subdivisions=1))
+        wing_r.append(ico(f"Wing_R_Quill_{index}", (-0.73, 0.24 + offset, 1.2 - index * 0.06), (0.09, 0.75, 0.14), blue, rotation=(0, R(6), R(4)), subdivisions=1))
+    tail = [
+        wedge(
+            f"Tail_Quill_{index}",
+            (x, 0.72, 1.15 - abs(x) * 0.08),
+            (x, 2.25 - abs(x) * 0.45, 0.96 - abs(x) * 0.15),
+            (0.18, 0.16),
+            (0.1, 0.065),
+            blue,
+        )
+        for index, x in enumerate((-0.3, -0.15, 0, 0.15, 0.3))
+    ]
     attach(body, rig, "body"); attach(head, rig, "head"); attach(jaw, rig, "jaw"); attach(wing_l, rig, "wing.L"); attach(wing_r, rig, "wing.R"); attach(tail, rig, "tail")
-    idle = create_action(rig, "Idle", [(1, {"head": {"rotation": (0, 0, R(-5))}}), (24, {"root": {"location": (0, 0, 0.04)}, "body": {"rotation": (R(1), 0, 0)}, "head": {"rotation": (R(-2), 0, R(12))}, "tail": {"rotation": (R(2), 0, R(-2))}}), (48, {"head": {"rotation": (0, 0, R(-5))}}), (72, {"root": {"location": (0, 0, 0.03)}, "head": {"rotation": (R(3), 0, R(-18))}}), (92, {"head": {"rotation": (0, 0, R(-5))}})])
-    scan = create_action(rig, "Scan", [(1, {}), (10, {"head": {"rotation": (R(8), 0, R(34))}}), (21, {"head": {"rotation": (R(-10), 0, R(-42))}}), (34, {"head": {"rotation": (R(3), 0, R(18))}}), (48, {})])
-    call = create_action(rig, "Call", [(1, {}), (6, {"head": {"rotation": (R(-7), 0, 0)}, "jaw": {"rotation": (R(18), 0, 0)}}), (11, {"jaw": {"rotation": (R(-2), 0, 0)}}), (17, {"head": {"rotation": (R(-5), 0, 0)}, "jaw": {"rotation": (R(20), 0, 0)}}), (24, {})])
-    signal = create_action(rig, "Signal", [(1, {}), (9, {"root": {"location": (0, 0, 0.1)}, "wing.L": {"rotation": (0, R(-48), R(-30))}, "wing.R": {"rotation": (0, R(48), R(30))}}), (18, {"wing.L": {"rotation": (0, R(22), R(15))}, "wing.R": {"rotation": (0, R(-22), R(-15))}}), (27, {"wing.L": {"rotation": (0, R(-48), R(-30))}, "wing.R": {"rotation": (0, R(48), R(30))}}), (40, {})])
+    idle = create_action(rig, "Idle", [(1, {"head": {"rotation": (0, 0, R(-4))}}), (24, {"root": {"location": (0, 0, 0.025)}, "body": {"rotation": (R(0.7), 0, 0)}, "head": {"rotation": (R(-2), 0, R(9))}, "tail": {"rotation": (R(1.5), 0, R(-2))}}), (48, {"head": {"rotation": (0, 0, R(-4))}}), (72, {"root": {"location": (0, 0, 0.02)}, "head": {"rotation": (R(3), 0, R(-14))}}), (92, {"head": {"rotation": (0, 0, R(-4))}})])
+    scan = create_action(rig, "Scan", [(1, {}), (10, {"head": {"rotation": (R(6), 0, R(29))}}), (21, {"head": {"rotation": (R(-8), 0, R(-34))}}), (34, {"head": {"rotation": (R(2), 0, R(15))}}), (48, {})])
+    call = create_action(rig, "Call", [(1, {}), (6, {"head": {"rotation": (R(-6), 0, 0)}, "jaw": {"rotation": (R(16), 0, 0)}}), (11, {"jaw": {"rotation": (R(-1), 0, 0)}}), (17, {"head": {"rotation": (R(-4), 0, 0)}, "jaw": {"rotation": (R(18), 0, 0)}}), (24, {})])
+    signal = create_action(rig, "Signal", [(1, {}), (9, {"root": {"location": (0, 0, 0.07)}, "wing.L": {"rotation": (0, R(-42), R(-26))}, "wing.R": {"rotation": (0, R(42), R(26))}}), (18, {"wing.L": {"rotation": (0, R(18), R(12))}, "wing.R": {"rotation": (0, R(-18), R(-12))}}), (27, {"wing.L": {"rotation": (0, R(-42), R(-26))}, "wing.R": {"rotation": (0, R(42), R(26))}}), (40, {})])
     rig.animation_data.action = idle
-    set_preview_scene("raven", target=(0, 0, 1.7))
+    set_preview_scene("raven", target=(0, 0, 1.3), camera_location=(6.8, -7.0, 3.15))
     save_and_export("raven", rig, (idle, scan, call, signal), preview_frame=24)
 
 

@@ -61,6 +61,18 @@ def cylinder(name, location, radius, depth, mat, rotation=(0.0, 0.0, 0.0), verti
     return finish_mesh(bpy.context.object, name, mat, smooth=False)
 
 
+def cylinder_between(name, start, end, radius, mat, vertices=8):
+    """Create a low-poly cylinder aligned between two world-space points."""
+    start_vector = Vector(start)
+    end_vector = Vector(end)
+    direction = end_vector - start_vector
+    midpoint = (start_vector + end_vector) / 2
+    bpy.ops.mesh.primitive_cylinder_add(vertices=vertices, radius=radius, depth=direction.length, location=midpoint)
+    obj = finish_mesh(bpy.context.object, name, mat, smooth=False)
+    obj.rotation_euler = direction.to_track_quat("Z", "Y").to_euler()
+    return obj
+
+
 def cube(name, location, scale, mat, rotation=(0.0, 0.0, 0.0), bevel=0.0):
     bpy.ops.mesh.primitive_cube_add(size=1.0, location=location, rotation=rotation)
     obj = finish_mesh(bpy.context.object, name, mat, scale, smooth=False)
@@ -71,6 +83,38 @@ def cube(name, location, scale, mat, rotation=(0.0, 0.0, 0.0), bevel=0.0):
         bpy.context.view_layer.objects.active = obj
         bpy.ops.object.modifier_apply(modifier=modifier.name)
     return obj
+
+
+def wedge(name, base_center, tip_center, base_size, tip_size, mat):
+    """Create a tapered rectangular prism between two Y-axis centers."""
+    base_x, base_y, base_z = base_center
+    tip_x, tip_y, tip_z = tip_center
+    base_width, base_height = base_size
+    tip_width, tip_height = tip_size
+    vertices = [
+        (base_x - base_width / 2, base_y, base_z + base_height / 2),
+        (base_x + base_width / 2, base_y, base_z + base_height / 2),
+        (base_x - base_width / 2, base_y, base_z - base_height / 2),
+        (base_x + base_width / 2, base_y, base_z - base_height / 2),
+        (tip_x - tip_width / 2, tip_y, tip_z + tip_height / 2),
+        (tip_x + tip_width / 2, tip_y, tip_z + tip_height / 2),
+        (tip_x - tip_width / 2, tip_y, tip_z - tip_height / 2),
+        (tip_x + tip_width / 2, tip_y, tip_z - tip_height / 2),
+    ]
+    faces = [
+        (0, 1, 3, 2),
+        (4, 6, 7, 5),
+        (0, 4, 5, 1),
+        (2, 3, 7, 6),
+        (0, 2, 6, 4),
+        (1, 5, 7, 3),
+    ]
+    mesh = bpy.data.meshes.new(f"{name}Mesh")
+    mesh.from_pydata(vertices, [], faces)
+    mesh.update()
+    obj = bpy.data.objects.new(name, mesh)
+    bpy.context.collection.objects.link(obj)
+    return finish_mesh(obj, name, mat, smooth=False)
 
 
 def create_rig(name, bones):
