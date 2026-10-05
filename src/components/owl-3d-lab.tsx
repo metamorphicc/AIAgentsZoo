@@ -32,20 +32,20 @@ function ModelLoadingState() {
   );
 }
 
-export function Owl3DLab() {
+export function Owl3DViewport() {
   const [animation, setAnimation] = useState<OwlAnimation>("Idle");
 
   return (
-    <section className="owl-lab" aria-label="Interactive 3D model of Owl 01">
-      <div className="owl-lab-toolbar">
+    <section className="animal-model-shell" aria-label="Interactive 3D model of Owl 01">
+      <div className="animal-model-toolbar">
         <div>
-          <span className="owl-lab-live"><i aria-hidden="true" />LIVE MODEL</span>
+          <span className="animal-model-live"><i aria-hidden="true" />LIVE SPECIMEN</span>
           <strong>OWL 01 / ARCHIVIST</strong>
         </div>
         <span>GLB · 65 KB · 4 CLIPS</span>
       </div>
 
-      <div className="owl-lab-viewer">
+      <div className="animal-model-viewer">
         <Canvas
           camera={{ position: [5.8, 3.6, 7.4], fov: 35 }}
           dpr={[1, 1.8]}
@@ -85,15 +85,15 @@ export function Owl3DLab() {
             target={[0, 1.9, 0]}
           />
         </Canvas>
-        <p className="owl-lab-hint">DRAG TO ORBIT · SCROLL TO ZOOM</p>
+        <p className="animal-model-hint">DRAG TO ORBIT · SCROLL TO ZOOM</p>
       </div>
 
-      <div className="owl-lab-controls" aria-label="Animation controls">
+      <div className="animal-model-controls" aria-label="Animation controls">
         <div>
           <span>BEHAVIOR CLIP</span>
           <strong>{animation}</strong>
         </div>
-        <div className="owl-lab-actions">
+        <div className="animal-model-actions">
           {animationNames.map((name) => (
             <button
               aria-pressed={animation === name}

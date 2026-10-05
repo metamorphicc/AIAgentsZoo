@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export const zooNavigation = [
   { id: "zoo", label: "Zoo", href: "/zoo" },
-  { id: "agents", label: "Agents", href: "/agents" },
+  { id: "agents", label: "Animals", href: "/agents" },
   { id: "trace", label: "Trace", href: "/trace" },
   { id: "artifacts", label: "Artifacts", href: "/artifacts" },
   { id: "tasks", label: "Tasks", href: "/tasks" },
