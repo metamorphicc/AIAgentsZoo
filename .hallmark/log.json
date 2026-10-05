@@ -1,6 +1,15 @@
 [
   {
     "date": "2026-10-06",
+    "macrostructure": "Workbench",
+    "theme": "studied-DNA",
+    "theme_axes": "dark / rounded-geometric / acid-lime",
+    "vibe": "clear operator home, living habitat",
+    "enrichment": "Grok operator profile with live habitat analytics",
+    "brief": "Replace the duplicated dashboard hero with an operator home, real analytics, a first-run guide, and restrained motion."
+  },
+  {
+    "date": "2026-10-06",
     "macrostructure": "Split Studio",
     "theme": "studied-DNA",
     "theme_axes": "dark / rounded-geometric / acid-lime",
