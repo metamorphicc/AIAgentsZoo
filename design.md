@@ -15,7 +15,7 @@ The visual direction is an atmospheric **midnight biome**: dark paper, acid-lime
 - Display and interface: Google Sans, variable 400–700.
 - Technical data: Google Sans Code.
 - Accent footprint: active route, live state, action, routed signal, and key identifiers only.
-- Motion: one orchestrated page entrance, living animal drift, active signal flow, a user-pausable habitat rail, and vertical text swaps on primary CTAs only. No universal scroll reveals. Reduced-motion removes all non-essential movement.
+- Motion: one orchestrated page entrance, living animal drift, active signal flow, a user-pausable habitat rail, vertical text swaps on primary CTAs, and functional loading indicators at real async boundaries. No universal scroll reveals. Reduced-motion removes non-essential movement and slows functional loaders.
 - Copy: direct, operational, and honest about what is local, off-chain, or not implemented.
 
 ## Layout Rules
@@ -39,6 +39,9 @@ The visual direction is an atmospheric **midnight biome**: dark paper, acid-lime
 - `MotionScope`: hydration-aware, one-shot page entrance for landing and product workspaces.
 - `KineticLink`: two-layer vertical label swap reserved for the landing page's primary routes.
 - `HabitatMotionRail`: slow, pausable preview of the Grok-to-animal handoff loop.
+- `RouteLoadingState`: delayed route-level data indicator, shown only when a server transition lasts longer than 150 ms.
+- `InlineActivity`: consistent in-button progress for mutations without shifting button geometry.
+- `ModelLoadingState`: real GLB loading progress inside the persistent animal viewport.
 - Status labels pair color with text and a dot.
 
 ## Route Map
@@ -85,6 +88,7 @@ The canonical tokens are maintained in `tokens.css`; all application CSS consume
   --radius-card: 0.75rem;
   --radius-input: 0.5rem;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-loader: 1.4s;
   --dur-ambient: 32s;
 }
 ```
@@ -105,6 +109,7 @@ The canonical tokens are maintained in `tokens.css`; all application CSS consume
     "input": { "$type": "dimension", "$value": "0.5rem" }
   },
   "duration": {
+    "loader": { "$type": "duration", "$value": "1.4s" },
     "ambient": { "$type": "duration", "$value": "32s" }
   }
 }

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 
+import { InlineActivity } from "@/components/loading-states";
 import type { Agent, Enclosure } from "@/lib/zoo/types";
 
 type WorkbenchProps = {
@@ -55,7 +56,7 @@ export function EnclosureWorkbench({ agents, enclosures, initialEnclosureId }: W
         <label><span>Name</span><input autoComplete="off" maxLength={80} minLength={2} name="name" placeholder="Research Canopy" required /></label>
         <label><span>Territory</span><input autoComplete="off" maxLength={160} minLength={2} name="territory" placeholder="Public data and release notes" required /></label>
         <label><span>Description</span><textarea maxLength={280} minLength={4} name="description" placeholder="What this enclosure is responsible for." required rows={3} /></label>
-        <button className="action-button action-button--accent" disabled={operation !== "idle"} type="submit">{operation === "enclosure" ? "CREATING…" : "CREATE ENCLOSURE"}</button>
+        <button aria-busy={operation === "enclosure"} className="action-button action-button--accent" disabled={operation !== "idle"} type="submit">{operation === "enclosure" ? <InlineActivity label="CREATING ENCLOSURE" /> : "CREATE ENCLOSURE"}</button>
       </form>
 
       <form className="operator-form operator-form--animal" onSubmit={(event) => submit(event, "animal", "/api/agents")}>
@@ -70,7 +71,7 @@ export function EnclosureWorkbench({ agents, enclosures, initialEnclosureId }: W
         </div>
         <label><span>Role override <small>optional</small></span><input autoComplete="off" maxLength={80} name="role" placeholder="Uses the species default when empty" /></label>
         <label><span>First task <small>optional</small></span><textarea maxLength={1000} name="task" placeholder="Uses the species default when empty" rows={3} /></label>
-        <button className="action-button action-button--accent" disabled={operation !== "idle" || enclosures.length === 0} type="submit">{operation === "animal" ? "CREATING…" : "CREATE ANIMAL"}</button>
+        <button aria-busy={operation === "animal"} className="action-button action-button--accent" disabled={operation !== "idle" || enclosures.length === 0} type="submit">{operation === "animal" ? <InlineActivity label="CREATING ANIMAL" /> : "CREATE ANIMAL"}</button>
       </form>
 
       <form className="operator-form operator-form--signal" onSubmit={(event) => submit(event, "signal", "/api/signals")}>
@@ -79,7 +80,7 @@ export function EnclosureWorkbench({ agents, enclosures, initialEnclosureId }: W
           <label><span>From</span><select name="agentId" required>{agents.map((agent) => <option key={agent.id} value={agent.id}>{agent.name}</option>)}</select></label>
           <label><span>To</span><select defaultValue={agents[1]?.id} name="targetAgentId" required>{agents.map((agent) => <option key={agent.id} value={agent.id}>{agent.name}</option>)}</select></label>
           <label><span>Request</span><input autoComplete="off" maxLength={500} minLength={3} name="summary" placeholder="Inspect this observation and build a field note." required /></label>
-          <button className="action-button" disabled={operation !== "idle" || agents.length < 2} type="submit">{operation === "signal" ? "PUBLISHING…" : "PUBLISH SIGNAL"}</button>
+          <button aria-busy={operation === "signal"} className="action-button" disabled={operation !== "idle" || agents.length < 2} type="submit">{operation === "signal" ? <InlineActivity label="PUBLISHING SIGNAL" /> : "PUBLISH SIGNAL"}</button>
         </div>
       </form>
 

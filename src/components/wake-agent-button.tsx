@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { InlineActivity } from "@/components/loading-states";
+
 type WakeAgentButtonProps = {
   agentId: string;
   allowTask?: boolean;
@@ -43,7 +45,7 @@ export function WakeAgentButton({ agentId, allowTask = false, defaultTask = "", 
     <div className="wake-control" data-state={state}>
       {allowTask ? <label className="wake-task"><span>Next cycle task</span><textarea maxLength={1000} onChange={(event) => setTask(event.target.value)} rows={3} value={task} /></label> : null}
       <button className="pill-button pill-button--solid" type="button" onClick={wakeAgent} disabled={disabled || state === "loading"} aria-busy={state === "loading"}>
-        {state === "loading" ? <><span className="button-spinner" aria-hidden="true" /> Running cycle</> : state === "success" ? "Cycle complete" : state === "error" ? "Try again" : "Wake agent"}
+        {state === "loading" ? <InlineActivity label="Running cycle" /> : state === "success" ? "Cycle complete" : state === "error" ? "Try again" : "Wake agent"}
       </button>
       {message ? <p role={state === "error" ? "alert" : "status"}>{message}</p> : null}
     </div>

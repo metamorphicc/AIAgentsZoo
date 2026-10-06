@@ -1,6 +1,6 @@
 "use client";
 
-import { ContactShadows, Grid, Html, OrbitControls, useAnimations, useGLTF } from "@react-three/drei";
+import { ContactShadows, Grid, Html, OrbitControls, useAnimations, useGLTF, useProgress } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LoopOnce, LoopRepeat } from "three";
@@ -97,10 +97,18 @@ function AnimalModel({
   return <primitive object={model} position={[0, 0, 0]} scale={profile.scale} />;
 }
 
-function ModelLoadingState() {
+function ModelLoadingState({ name }: { name: string }) {
+  const { progress } = useProgress();
+  const value = Math.round(progress);
+
   return (
     <Html center>
-      <span className="owl-lab-loading">LOADING SPECIMEN</span>
+      <div className="animal-model-loading" role="status" aria-live="polite">
+        <span>ASSEMBLING SPECIMEN</span>
+        <strong>{name.toUpperCase()}</strong>
+        <progress aria-label={`Loading 3D model of ${name}`} max="100" value={value}>{value}%</progress>
+        <small>{value}% / MODEL DATA</small>
+      </div>
     </Html>
   );
 }
@@ -174,7 +182,7 @@ export function Animal3DViewport({ name, role, species }: { name: string; role: 
           <ambientLight intensity={1.4} />
           <directionalLight castShadow color="#b8ff32" intensity={3.2} position={[4, 7, 5]} />
           <directionalLight color="#ff6122" intensity={2.4} position={[-5, 3, -2]} />
-          <Suspense fallback={<ModelLoadingState />}>
+          <Suspense fallback={<ModelLoadingState name={name} />}>
             <AnimalModel onFinished={returnToIdle} playback={playback} profile={profile} reducedMotion={reducedMotion} />
             <ContactShadows opacity={0.62} position={[0, -0.04, 0]} scale={8} blur={2.8} far={6} />
           </Suspense>
@@ -227,5 +235,3 @@ export function Animal3DViewport({ name, role, species }: { name: string; role: 
     </section>
   );
 }
-
-Object.values(animalProfiles).forEach((profile) => useGLTF.preload(profile.modelPath));
