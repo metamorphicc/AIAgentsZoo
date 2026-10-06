@@ -45,7 +45,6 @@ export function RefillButton({
         disabled={state === "loading"}
         onClick={refill}
         type="button"
-        style={{ color: "black" }}
       >
         {state === "loading" ? (
           <InlineActivity label="REFILLING FEED" />

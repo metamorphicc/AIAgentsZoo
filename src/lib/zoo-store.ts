@@ -6,7 +6,17 @@ import { createClient, type Client, type InStatement, type Row } from "@libsql/c
 
 import { getDatabasePath } from "@/lib/database-path";
 import { initialAgents, species } from "@/lib/zoo/species";
-import type { Agent, AgentRun, Artifact, Enclosure, SpeciesId, ZooEvent } from "@/lib/zoo/types";
+import type {
+  Agent,
+  AgentRun,
+  Artifact,
+  AuthRole,
+  AuthSession,
+  Enclosure,
+  RuntimeControl,
+  SpeciesId,
+  ZooEvent,
+} from "@/lib/zoo/types";
 
 const remoteUrl = process.env.TURSO_DATABASE_URL;
 export const storageMode = remoteUrl ? "turso" : process.env.VERCEL ? "ephemeral" : "local-libsql";
@@ -42,6 +52,17 @@ function value(row: Row, key: string) {
   return row[key];
 }
 
+async function ensureColumn(table: "agents" | "enclosures", column: string, definition: string) {
+  const columns = await zooStore.execute(`PRAGMA table_info(${table})`);
+  if (columns.rows.some((row) => String(value(row, "name")) === column)) return;
+  try {
+    await zooStore.execute(`ALTER TABLE ${table} ADD COLUMN ${definition}`);
+  } catch (error) {
+    const refreshed = await zooStore.execute(`PRAGMA table_info(${table})`);
+    if (!refreshed.rows.some((row) => String(value(row, "name")) === column)) throw error;
+  }
+}
+
 function mapAgent(row: Row): Agent {
   return {
     id: String(value(row, "id")),
@@ -54,6 +75,7 @@ function mapAgent(row: Row): Agent {
     feed: Number(value(row, "feed")),
     feedMax: Number(value(row, "feed_max")),
     enclosureId: String(value(row, "enclosure_id") ?? defaultEnclosure.id),
+    ownerAddress: value(row, "owner_address") ? String(value(row, "owner_address")) : null,
     task: String(value(row, "task")),
     lastAwakeAt: value(row, "last_awake_at") ? String(value(row, "last_awake_at")) : null,
     createdAt: String(value(row, "created_at")),
@@ -102,6 +124,7 @@ function mapEnclosure(row: Row): Enclosure {
     name: String(value(row, "name")),
     description: String(value(row, "description")),
     territory: String(value(row, "territory")),
+    ownerAddress: value(row, "owner_address") ? String(value(row, "owner_address")) : null,
     agentCount: Number(value(row, "agent_count") ?? 0),
     feed: Number(value(row, "feed") ?? 0),
     feedMax: Number(value(row, "feed_max") ?? 0),
@@ -117,6 +140,7 @@ async function initializeStore() {
       name TEXT NOT NULL,
       description TEXT NOT NULL,
       territory TEXT NOT NULL,
+      owner_address TEXT,
       created_at TEXT NOT NULL
     )`,
     `CREATE TABLE IF NOT EXISTS agents (
@@ -130,6 +154,7 @@ async function initializeStore() {
       feed INTEGER NOT NULL DEFAULT 10,
       feed_max INTEGER NOT NULL DEFAULT 10,
       enclosure_id TEXT REFERENCES enclosures(id),
+      owner_address TEXT,
       task TEXT NOT NULL,
       last_awake_at TEXT,
       created_at TEXT NOT NULL
@@ -161,17 +186,47 @@ async function initializeStore() {
       body TEXT NOT NULL,
       created_at TEXT NOT NULL
     )`,
+    `CREATE TABLE IF NOT EXISTS auth_nonces (
+      address TEXT PRIMARY KEY,
+      nonce TEXT NOT NULL,
+      message TEXT NOT NULL,
+      expires_at TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    )`,
+    `CREATE TABLE IF NOT EXISTS auth_sessions (
+      token_hash TEXT PRIMARY KEY,
+      address TEXT NOT NULL,
+      role TEXT NOT NULL,
+      expires_at TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    )`,
+    `CREATE TABLE IF NOT EXISTS rate_limits (
+      rate_key TEXT NOT NULL,
+      bucket TEXT NOT NULL,
+      count INTEGER NOT NULL,
+      expires_at INTEGER NOT NULL,
+      PRIMARY KEY (rate_key, bucket)
+    )`,
+    `CREATE TABLE IF NOT EXISTS runtime_controls (
+      control_key TEXT PRIMARY KEY,
+      value TEXT NOT NULL,
+      updated_by TEXT,
+      updated_at TEXT
+    )`,
     `CREATE INDEX IF NOT EXISTS events_agent_created_idx ON events(agent_id, created_at DESC)`,
     `CREATE INDEX IF NOT EXISTS runs_agent_created_idx ON agent_runs(agent_id, created_at DESC)`,
   ];
 
   await zooStore.batch(schema, "write");
 
-  const columns = await zooStore.execute("PRAGMA table_info(agents)");
-  if (!columns.rows.some((row) => String(value(row, "name")) === "enclosure_id")) {
-    await zooStore.execute("ALTER TABLE agents ADD COLUMN enclosure_id TEXT");
-  }
+  await ensureColumn("agents", "enclosure_id", "enclosure_id TEXT");
+  await ensureColumn("agents", "owner_address", "owner_address TEXT");
+  await ensureColumn("enclosures", "owner_address", "owner_address TEXT");
   await zooStore.execute("CREATE INDEX IF NOT EXISTS agents_enclosure_idx ON agents(enclosure_id, created_at)");
+  await zooStore.execute("CREATE INDEX IF NOT EXISTS agents_owner_idx ON agents(owner_address, created_at)");
+  await zooStore.execute("CREATE INDEX IF NOT EXISTS enclosures_owner_idx ON enclosures(owner_address, created_at)");
+  await zooStore.execute("CREATE INDEX IF NOT EXISTS sessions_address_idx ON auth_sessions(address, expires_at)");
+  await zooStore.execute("CREATE INDEX IF NOT EXISTS rate_limits_expiry_idx ON rate_limits(expires_at)");
 
   await zooStore.execute({
     sql: `INSERT INTO enclosures (id, name, description, territory, created_at)
@@ -234,6 +289,10 @@ async function ready() {
   await storeReady;
 }
 
+export async function ensureZooStoreReady() {
+  await ready();
+}
+
 export async function getAgents(): Promise<Agent[]> {
   await ready();
   const result = await zooStore.execute("SELECT * FROM agents ORDER BY created_at, id");
@@ -286,13 +345,14 @@ export async function createEnclosure(input: {
   name: string;
   description: string;
   territory: string;
+  ownerAddress: string;
 }): Promise<Enclosure> {
   await ready();
   const id = `enclosure-${randomUUID().slice(0, 8)}`;
   const createdAt = new Date().toISOString();
   await zooStore.execute({
-    sql: "INSERT INTO enclosures (id, name, description, territory, created_at) VALUES (?, ?, ?, ?, ?)",
-    args: [id, input.name, input.description, input.territory, createdAt],
+    sql: "INSERT INTO enclosures (id, name, description, territory, owner_address, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+    args: [id, input.name, input.description, input.territory, input.ownerAddress, createdAt],
   });
   return (await getEnclosure(id))!;
 }
@@ -305,10 +365,15 @@ export async function createAgent(input: {
   task?: string;
   feedMax: number;
   enclosureId: string;
+  ownerAddress: string;
+  allowSystemEnclosure?: boolean;
 }): Promise<Agent> {
   await ready();
   const enclosure = await getEnclosure(input.enclosureId);
   if (!enclosure) throw new Error("ENCLOSURE_NOT_FOUND");
+  if (enclosure.ownerAddress !== input.ownerAddress && !input.allowSystemEnclosure) {
+    throw new Error("ENCLOSURE_FORBIDDEN");
+  }
 
   const blueprint = species[input.species];
   const id = `${input.species}-${randomUUID().slice(0, 8)}`;
@@ -316,8 +381,8 @@ export async function createAgent(input: {
   await zooStore.execute({
     sql: `INSERT INTO agents (
       id, name, species, emoji, role, description, status, feed, feed_max,
-      enclosure_id, task, last_awake_at, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, 'sleeping', ?, ?, ?, ?, NULL, ?)`,
+      enclosure_id, owner_address, task, last_awake_at, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, 'sleeping', ?, ?, ?, ?, ?, NULL, ?)`,
     args: [
       id,
       input.name,
@@ -328,6 +393,7 @@ export async function createAgent(input: {
       input.feedMax,
       input.feedMax,
       input.enclosureId,
+      input.ownerAddress,
       input.task || blueprint.defaultTask,
       createdAt,
     ],
@@ -561,4 +627,152 @@ export async function failAgentRun(input: {
       args: [randomUUID(), input.agentId, `Cycle failed: ${input.error}`, JSON.stringify({ runId: input.runId }), input.completedAt],
     },
   ], "write");
+}
+
+export async function saveAuthNonce(input: {
+  address: string;
+  nonce: string;
+  message: string;
+  expiresAt: string;
+}): Promise<void> {
+  await ready();
+  const createdAt = new Date().toISOString();
+  await zooStore.execute({
+    sql: `INSERT INTO auth_nonces (address, nonce, message, expires_at, created_at)
+      VALUES (?, ?, ?, ?, ?)
+      ON CONFLICT(address) DO UPDATE SET
+        nonce = excluded.nonce,
+        message = excluded.message,
+        expires_at = excluded.expires_at,
+        created_at = excluded.created_at`,
+    args: [input.address, input.nonce, input.message, input.expiresAt, createdAt],
+  });
+}
+
+export async function getAuthNonce(address: string): Promise<{
+  nonce: string;
+  message: string;
+  expiresAt: string;
+} | null> {
+  await ready();
+  const result = await zooStore.execute({
+    sql: "SELECT nonce, message, expires_at FROM auth_nonces WHERE address = ?",
+    args: [address],
+  });
+  const row = result.rows[0];
+  if (!row) return null;
+  return {
+    nonce: String(value(row, "nonce")),
+    message: String(value(row, "message")),
+    expiresAt: String(value(row, "expires_at")),
+  };
+}
+
+export async function consumeAuthNonce(address: string, nonce: string): Promise<boolean> {
+  await ready();
+  const result = await zooStore.execute({
+    sql: "DELETE FROM auth_nonces WHERE address = ? AND nonce = ?",
+    args: [address, nonce],
+  });
+  return result.rowsAffected === 1;
+}
+
+export async function createAuthSession(input: {
+  tokenHash: string;
+  address: string;
+  role: AuthRole;
+  expiresAt: string;
+}): Promise<AuthSession> {
+  await ready();
+  const createdAt = new Date().toISOString();
+  await zooStore.batch([
+    {
+      sql: "DELETE FROM auth_sessions WHERE address = ? OR expires_at <= ?",
+      args: [input.address, createdAt],
+    },
+    {
+      sql: `INSERT INTO auth_sessions (token_hash, address, role, expires_at, created_at)
+        VALUES (?, ?, ?, ?, ?)`,
+      args: [input.tokenHash, input.address, input.role, input.expiresAt, createdAt],
+    },
+  ], "write");
+  return { address: input.address, role: input.role, expiresAt: input.expiresAt };
+}
+
+export async function getAuthSession(tokenHash: string): Promise<AuthSession | null> {
+  await ready();
+  const now = new Date().toISOString();
+  const result = await zooStore.execute({
+    sql: `SELECT address, role, expires_at FROM auth_sessions
+      WHERE token_hash = ? AND expires_at > ?`,
+    args: [tokenHash, now],
+  });
+  const row = result.rows[0];
+  if (!row) return null;
+  return {
+    address: String(value(row, "address")),
+    role: String(value(row, "role")) as AuthRole,
+    expiresAt: String(value(row, "expires_at")),
+  };
+}
+
+export async function deleteAuthSession(tokenHash: string): Promise<void> {
+  await ready();
+  await zooStore.execute({ sql: "DELETE FROM auth_sessions WHERE token_hash = ?", args: [tokenHash] });
+}
+
+export async function consumeRateLimit(input: {
+  key: string;
+  scope: string;
+  limit: number;
+  windowMs: number;
+}): Promise<{ allowed: boolean; remaining: number; retryAfterSeconds: number }> {
+  await ready();
+  const now = Date.now();
+  const windowStart = Math.floor(now / input.windowMs) * input.windowMs;
+  const expiresAt = windowStart + input.windowMs;
+  const bucket = `${input.scope}:${windowStart}`;
+  await zooStore.execute({ sql: "DELETE FROM rate_limits WHERE expires_at <= ?", args: [now] });
+  const result = await zooStore.execute({
+    sql: `INSERT INTO rate_limits (rate_key, bucket, count, expires_at)
+      VALUES (?, ?, 1, ?)
+      ON CONFLICT(rate_key, bucket) DO UPDATE SET count = count + 1
+      RETURNING count`,
+    args: [input.key, bucket, expiresAt],
+  });
+  const count = Number(value(result.rows[0], "count"));
+  return {
+    allowed: count <= input.limit,
+    remaining: Math.max(0, input.limit - count),
+    retryAfterSeconds: Math.max(1, Math.ceil((expiresAt - now) / 1000)),
+  };
+}
+
+export async function getRuntimeControl(): Promise<RuntimeControl> {
+  await ready();
+  const result = await zooStore.execute({
+    sql: "SELECT value, updated_by, updated_at FROM runtime_controls WHERE control_key = 'runtime_paused'",
+    args: [],
+  });
+  const row = result.rows[0];
+  return {
+    paused: row ? String(value(row, "value")) === "true" : false,
+    updatedBy: row && value(row, "updated_by") ? String(value(row, "updated_by")) : null,
+    updatedAt: row && value(row, "updated_at") ? String(value(row, "updated_at")) : null,
+  };
+}
+
+export async function setRuntimePaused(paused: boolean, updatedBy: string): Promise<RuntimeControl> {
+  await ready();
+  const updatedAt = new Date().toISOString();
+  await zooStore.execute({
+    sql: `INSERT INTO runtime_controls (control_key, value, updated_by, updated_at)
+      VALUES ('runtime_paused', ?, ?, ?)
+      ON CONFLICT(control_key) DO UPDATE SET
+        value = excluded.value,
+        updated_by = excluded.updated_by,
+        updated_at = excluded.updated_at`,
+    args: [paused ? "true" : "false", updatedBy, updatedAt],
+  });
+  return { paused, updatedBy, updatedAt };
 }

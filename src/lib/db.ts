@@ -193,6 +193,7 @@ function mapAgent(row: AgentRow): Agent {
     feed: row.feed,
     feedMax: row.feed_max,
     enclosureId: "habitat-01",
+    ownerAddress: null,
     task: row.task,
     lastAwakeAt: row.last_awake_at,
     createdAt: row.created_at,

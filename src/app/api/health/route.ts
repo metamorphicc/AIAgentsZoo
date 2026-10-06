@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 
-import { getAgents, getEnclosures, storageMode } from "@/lib/zoo-store";
+import { getAgents, getEnclosures, getRuntimeControl, storageMode } from "@/lib/zoo-store";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const [agents, enclosures] = await Promise.all([getAgents(), getEnclosures()]);
+    const [agents, enclosures, runtime] = await Promise.all([getAgents(), getEnclosures(), getRuntimeControl()]);
     const durable = storageMode !== "ephemeral";
 
     return NextResponse.json(
@@ -17,6 +17,8 @@ export async function GET() {
         provider: process.env.AGENT_PROVIDER === "openai" ? "openai" : "demo",
         agents: agents.length,
         enclosures: enclosures.length,
+        runtimePaused: runtime.paused,
+        walletAuth: true,
         checkedAt: new Date().toISOString(),
       },
       { status: durable ? 200 : 206 },

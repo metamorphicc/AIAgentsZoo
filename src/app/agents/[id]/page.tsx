@@ -1,12 +1,16 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { AccessPanel } from "@/components/access-panel";
 import { Animal3DViewport } from "@/components/owl-3d-lab";
 import { AgentMark, EmptyState } from "@/components/product-ui";
 import { RefillButton } from "@/components/refill-button";
 import { WakeAgentButton } from "@/components/wake-agent-button";
 import { ZooShell } from "@/components/zoo-shell";
 import { formatDate, formatEventType, formatStatus } from "@/lib/format";
+import { shortAddress } from "@/lib/auth/config";
+import { canManageResource } from "@/lib/auth/authorization";
+import { getSession } from "@/lib/auth/session";
 import { getAgent, getAgentEvents, getAgentRuns, getEnclosure } from "@/lib/zoo-store";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +19,8 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
   const { id } = await params;
   const agent = await getAgent(id);
   if (!agent) notFound();
-  const [events, runs, enclosure] = await Promise.all([getAgentEvents(agent.id), getAgentRuns(agent.id), getEnclosure(agent.enclosureId)]);
+  const [events, runs, enclosure, session] = await Promise.all([getAgentEvents(agent.id), getAgentRuns(agent.id), getEnclosure(agent.enclosureId), getSession()]);
+  const canManage = canManageResource(session, agent.ownerAddress);
 
   return (
     <ZooShell active="agents">
@@ -46,8 +51,7 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
           </div>
 
           <div className="animal-passport-controls">
-            <WakeAgentButton agentId={agent.id} allowTask defaultTask={agent.task} disabled={agent.status !== "sleeping" || agent.feed <= 0} />
-            <RefillButton endpoint={`/api/agents/${agent.id}/refill`} />
+            {canManage ? <><WakeAgentButton agentId={agent.id} allowTask defaultTask={agent.task} disabled={agent.status !== "sleeping" || agent.feed <= 0} /><RefillButton endpoint={`/api/agents/${agent.id}/refill`} /></> : <AccessPanel session={session} title="This passport is public; its controls are not.">Only the guardian wallet or a Zoo administrator can spend feed, change tasks, or wake this animal.</AccessPanel>}
           </div>
         </aside>
 
@@ -59,7 +63,7 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
       <section className="agent-detail-grid">
         <div className="task-panel animal-facts-panel">
           <div className="section-heading"><h2>Passport</h2><span>{agent.id}</span></div>
-          <dl><div><dt>Guardian</dt><dd>Local operator</dd></div><div><dt>Territory</dt><dd>{enclosure ? <Link href={`/enclosures/${enclosure.id}`}>{enclosure.name} ↗</Link> : agent.enclosureId}</dd></div><div><dt>Schedule</dt><dd>Autonomous visual behavior · explicit runtime cycles</dd></div><div><dt>Access</dt><dd>Read shared events · write own trace</dd></div></dl>
+          <dl><div><dt>Guardian</dt><dd>{agent.ownerAddress ? shortAddress(agent.ownerAddress) : "Zoo system"}</dd></div><div><dt>Territory</dt><dd>{enclosure ? <Link href={`/enclosures/${enclosure.id}`}>{enclosure.name} ↗</Link> : agent.enclosureId}</dd></div><div><dt>Schedule</dt><dd>Autonomous visual behavior · explicit runtime cycles</dd></div><div><dt>Access</dt><dd>Public read · guardian-signed control</dd></div></dl>
         </div>
         <div className="cycle-panel">
           <div className="section-heading"><h2>Cycle history</h2><span>{runs.length} runs</span></div>

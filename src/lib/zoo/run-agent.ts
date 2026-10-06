@@ -9,6 +9,7 @@ import {
   getAgentRuns,
   getArtifacts,
   getRecentEvents,
+  getRuntimeControl,
   insertArtifact,
   insertEvent,
   startAgentRun,
@@ -19,7 +20,7 @@ import { createOpenAIDecision } from "./providers/openai";
 
 export class AgentRunError extends Error {
   constructor(
-    public readonly code: "NOT_FOUND" | "NO_FEED" | "UNAVAILABLE" | "FAILED",
+    public readonly code: "NOT_FOUND" | "NO_FEED" | "UNAVAILABLE" | "PAUSED" | "FAILED",
     message: string,
   ) {
     super(message);
@@ -28,6 +29,10 @@ export class AgentRunError extends Error {
 }
 
 export async function runAgentCycle(agentId: string, taskOverride?: string) {
+  const runtime = await getRuntimeControl();
+  if (runtime.paused) {
+    throw new AgentRunError("PAUSED", "The habitat runtime is paused by an administrator");
+  }
   const agent = await getAgent(agentId);
 
   if (!agent) throw new AgentRunError("NOT_FOUND", "Agent not found");
