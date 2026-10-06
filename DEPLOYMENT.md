@@ -69,7 +69,7 @@ vercel domains inspect aiagentzoo.com
 - `/` loads the public landing page.
 - `/zoo` loads the operator dashboard.
 - `/api/health` reports Turso and durable state.
-- `/demo` completes without a wallet and does not add records to `/trace`.
+- Public visitors can browse `/zoo`, `/animals`, `/trace`, and `/artifacts` without mutation controls.
 - Connect a non-admin wallet, sign the EIP‑4361 message, create an enclosure and animal, reload, and confirm both persist.
 - Confirm the guardian cannot wake, refill, or signal with another wallet’s animals.
 - Connect an address listed in `ADMIN_WALLETS` and verify the runtime pause/resume control on `/manage`.

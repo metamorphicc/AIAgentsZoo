@@ -10,7 +10,7 @@ export const zooNavigation = [
   { id: "nodes", label: "Nodes", href: "/nodes" },
 ] as const;
 
-export type ZooRoute = (typeof zooNavigation)[number]["id"] | "demo" | "manage" | "protocol";
+export type ZooRoute = (typeof zooNavigation)[number]["id"] | "manage" | "protocol";
 
 export function ZooNavigation({ active }: { active: ZooRoute }) {
   return (

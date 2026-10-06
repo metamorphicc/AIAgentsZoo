@@ -55,7 +55,7 @@ export default async function HomePage() {
           <span>AI AGENT ZOO</span>
         </Link>
         <span className="landing-nav__status"><i aria-hidden="true" />PUBLIC HABITAT ONLINE</span>
-        <div className="landing-nav__actions"><Link href="/demo">TRY DEMO</Link><WalletSessionControl compact session={session} /><KineticLink className="landing-nav__entry" href="/zoo" label="ENTER ZOO" /></div>
+        <div className="landing-nav__actions"><WalletSessionControl compact session={session} /><KineticLink className="landing-nav__entry" href="/zoo" label="ENTER ZOO" /></div>
       </header>
 
       <MotionScope className="landing-main" id="landing-content" mode="landing">
@@ -69,7 +69,7 @@ export default async function HomePage() {
             </p>
             <div className="landing-hero__actions">
               <KineticLink className="landing-cta" href="/zoo" label="ENTER THE ZOO" />
-              <Link className="landing-text-link" href="/demo">RUN A GUEST DEMO <span aria-hidden="true">↗</span></Link>
+              <Link className="landing-text-link" href="/agents">MEET THE ANIMALS <span aria-hidden="true">↗</span></Link>
             </div>
             <dl className="landing-hero__facts">
               <div><dt>Node</dt><dd>Local</dd></div>
@@ -138,7 +138,7 @@ export default async function HomePage() {
       {/* Ft5: the landing closes with a statement and one decisive route into the product. */}
       <footer className="landing-footer">
         <p>Autonomy should leave evidence.</p>
-        <KineticLink className="landing-footer__entry" href="/demo" label="RUN THE PUBLIC DEMO" />
+        <KineticLink className="landing-footer__entry" href="/zoo" label="OPEN THE HABITAT" />
         <small>AI Agent Zoo · Wallet-signed guardian access</small>
       </footer>
     </div>

@@ -15,7 +15,7 @@ export default async function NodesPage() {
       <section className="node-console">
         <article className="primary-node">
           <div className="node-title"><span className={healthy ? "node-orbit" : "node-orbit node-orbit--error"} aria-hidden="true" /><div><p>NODE 01</p><h2>LOCAL HABITAT</h2></div><span className={`status-label status-label--${healthy ? "sleeping" : "error"}`}><i />{healthy ? "Healthy" : "Attention"}</span></div>
-          <dl><div><dt>Residents</dt><dd>{agents.length}</dd></div><div><dt>Ledger records</dt><dd>{events.length}</dd></div><div><dt>Storage</dt><dd>{storageMode === "turso" ? "Turso Cloud / libSQL" : storageMode === "ephemeral" ? "Ephemeral /tmp" : "Local libSQL"}</dd></div><div><dt>Runtime</dt><dd>{runtime.paused ? "Admin paused" : process.env.AGENT_PROVIDER === "openai" ? "OpenAI ready" : "Demo ready"}</dd></div></dl>
+          <dl><div><dt>Residents</dt><dd>{agents.length}</dd></div><div><dt>Ledger records</dt><dd>{events.length}</dd></div><div><dt>Storage</dt><dd>{storageMode === "turso" ? "Turso Cloud / libSQL" : storageMode === "ephemeral" ? "Ephemeral /tmp" : "Local libSQL"}</dd></div><div><dt>Runtime</dt><dd>{runtime.paused ? "Admin paused" : process.env.AGENT_PROVIDER === "openai" ? "OpenAI ready" : "Deterministic ready"}</dd></div></dl>
           {storageMode === "ephemeral" ? <p className="node-warning">Production storage is temporary. Connect Turso before accepting real users.</p> : null}
           <Link className="text-link" href="/trace">Inspect ledger ↗</Link>
         </article>
