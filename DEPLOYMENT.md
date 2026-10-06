@@ -25,6 +25,8 @@ Recommended path:
 4. Confirm these Production and Preview environment variables exist:
    - `TURSO_DATABASE_URL`
    - `TURSO_AUTH_TOKEN`
+   - `ADMIN_WALLETS` — comma-separated EVM addresses allowed to operate the founding habitat and global runtime switch
+   - `RATE_LIMIT_SALT` — a production-only random value, for example from `openssl rand -hex 32`
 5. Leave `DATABASE_PATH` unset in Vercel.
 6. Redeploy. The app creates its tables and founding habitat automatically.
 7. Open `/api/health`. Production is correctly configured when it returns `"storage":"turso"` and `"durable":true`.
@@ -67,9 +69,12 @@ vercel domains inspect aiagentzoo.com
 - `/` loads the public landing page.
 - `/zoo` loads the operator dashboard.
 - `/api/health` reports Turso and durable state.
-- Create a test enclosure and animal, reload the page, and confirm both persist.
+- `/demo` completes without a wallet and does not add records to `/trace`.
+- Connect a non-admin wallet, sign the EIP‑4361 message, create an enclosure and animal, reload, and confirm both persist.
+- Confirm the guardian cannot wake, refill, or signal with another wallet’s animals.
+- Connect an address listed in `ADMIN_WALLETS` and verify the runtime pause/resume control on `/manage`.
 - Wake one animal and confirm feed decreases by one and the Trace gets new records.
 - Refill it and confirm the refill appears in the Trace.
 - Check the site at 375 px and desktop width.
 
-The token, wallet, staking, federation, and on-chain reputation layers remain intentionally unimplemented. The deployed product does not pretend otherwise.
+Wallet identity and guardian ownership are implemented off-chain. Token, staking, federation, agent-native keys, and on-chain reputation remain intentionally unimplemented. The deployed product does not pretend otherwise.

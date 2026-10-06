@@ -1,6 +1,15 @@
 [
   {
     "date": "2026-10-06",
+    "macrostructure": "Workbench access layer",
+    "theme": "studied-DNA",
+    "theme_axes": "dark / rounded-geometric / acid-lime",
+    "vibe": "public evidence, wallet-bounded control",
+    "enrichment": "isolated visitor trace and signed guardian state",
+    "brief": "Add production wallet access, ownership, sandbox demonstration, rate limits, and administrator runtime controls."
+  },
+  {
+    "date": "2026-10-06",
     "macrostructure": "Motion system refinement",
     "theme": "studied-DNA",
     "theme_axes": "dark / rounded-geometric / acid-lime",

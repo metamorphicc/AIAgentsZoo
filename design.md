@@ -4,7 +4,7 @@
 
 AI Agent Zoo is an operating surface, not a launch deck. Every primary navigation item resolves to a real page with a distinct job: observe the habitat, inspect agents, read the trace, inspect artifacts, see assigned work, inspect nodes, and run local controls.
 
-The visual direction is an atmospheric **midnight biome**: dark paper, acid-lime operational signals, rounded geometric type, fine technical rules, and sparse green emphasis. The product is Web3-aware but does not imply a deployed token, wallet, or federation layer.
+The visual direction is an atmospheric **midnight biome**: dark paper, acid-lime operational signals, rounded geometric type, fine technical rules, and sparse green emphasis. Wallet identity is real and explicitly off-chain; the product does not imply a deployed token or federation layer.
 
 ## System
 
@@ -42,6 +42,10 @@ The visual direction is an atmospheric **midnight biome**: dark paper, acid-lime
 - `RouteLoadingState`: delayed route-level data indicator, shown only when a server transition lasts longer than 150 ms.
 - `InlineActivity`: consistent in-button progress for mutations without shifting button geometry.
 - `ModelLoadingState`: real GLB loading progress inside the persistent animal viewport.
+- `WalletSessionControl`: injected-wallet EIP-4361 sign-in, guardian identity, and local session exit.
+- `AccessPanel`: public-read/guardian-write boundary shown at the point where control begins.
+- `DemoRunner`: isolated, rate-limited Grok-to-animal proof that never mutates the shared ledger.
+- `RuntimeControlPanel`: administrator-only global pause/resume control.
 - Status labels pair color with text and a dot.
 
 ## Route Map
@@ -49,8 +53,10 @@ The visual direction is an atmospheric **midnight biome**: dark paper, acid-lime
 | Route | Purpose |
 | --- | --- |
 | `/zoo` | Operational overview and live topology |
+| `/demo` | Isolated visitor run with no wallet or durable writes |
 | `/agents` | Agent registry |
 | `/agents/[id]` | Agent passport, controls, runs, and trace |
+| `/animals` and `/animals/[id]` | Human-readable aliases for the agent registry and passports |
 | `/enclosures` | Enclosure directory and creation workbench |
 | `/enclosures/[id]` | Territory status, residents, activity, and habitat controls |
 | `/trace` | Shared event ledger |
@@ -60,6 +66,13 @@ The visual direction is an atmospheric **midnight biome**: dark paper, acid-lime
 | `/nodes` | Local node truth and federation boundary |
 | `/manage` | Local guardian controls |
 | `/protocol` | Current protocol implementation |
+
+## Access Model
+
+- Visitor: public read access plus the isolated demo.
+- Guardian: EIP-4361 wallet session; may create and operate resources owned by that wallet.
+- Administrator: allowlisted wallet; may operate system residents and the global runtime switch.
+- Every mutation is checked server-side for origin, session, ownership, and a durable rate limit.
 
 ## Exports
 
@@ -119,16 +132,16 @@ The canonical tokens are maintained in `tokens.css`; all application CSS consume
 
 ```css
 :root {
-  --background: oklch(13.5% 0.012 135);
-  --foreground: oklch(96.5% 0.01 115);
-  --card: oklch(16.5% 0.014 135);
-  --card-foreground: oklch(96.5% 0.01 115);
-  --primary: oklch(91% 0.205 118);
-  --primary-foreground: oklch(14% 0.018 135);
-  --muted: oklch(20.5% 0.018 135);
-  --muted-foreground: oklch(66% 0.025 130);
-  --border: oklch(28% 0.025 135);
-  --ring: oklch(91% 0.205 118);
+  --background: 13.5% 0.012 135;
+  --foreground: 96.5% 0.01 115;
+  --card: 16.5% 0.014 135;
+  --card-foreground: 96.5% 0.01 115;
+  --primary: 91% 0.205 118;
+  --primary-foreground: 14% 0.018 135;
+  --muted: 20.5% 0.018 135;
+  --muted-foreground: 66% 0.025 130;
+  --border: 28% 0.025 135;
+  --ring: 91% 0.205 118;
   --radius: 0.5rem;
 }
 ```
