@@ -15,7 +15,7 @@ The visual direction is an atmospheric **midnight biome**: dark paper, acid-lime
 - Display and interface: Google Sans, variable 400–700.
 - Technical data: Google Sans Code.
 - Accent footprint: active route, live state, action, routed signal, and key identifiers only.
-- Motion: short hover/press feedback, one-shot habitat entry, living animal drift, and active signal flow. No scroll-linked motion. Reduced-motion collapses transitions.
+- Motion: one orchestrated page entrance, living animal drift, active signal flow, a user-pausable habitat rail, and vertical text swaps on primary CTAs only. No universal scroll reveals. Reduced-motion removes all non-essential movement.
 - Copy: direct, operational, and honest about what is local, off-chain, or not implemented.
 
 ## Layout Rules
@@ -36,6 +36,9 @@ The visual direction is an atmospheric **midnight biome**: dark paper, acid-lime
 - `WakeAgentButton`: runs an animal cycle with an optional operator task.
 - `RefillButton`: explicitly restores bounded compute feed and writes the action to the ledger.
 - `EnclosureWorkbench`: creates enclosures and animals and publishes operator signals; every control calls a real API route.
+- `MotionScope`: hydration-aware, one-shot page entrance for landing and product workspaces.
+- `KineticLink`: two-layer vertical label swap reserved for the landing page's primary routes.
+- `HabitatMotionRail`: slow, pausable preview of the Grok-to-animal handoff loop.
 - Status labels pair color with text and a dot.
 
 ## Route Map
@@ -82,6 +85,7 @@ The canonical tokens are maintained in `tokens.css`; all application CSS consume
   --radius-card: 0.75rem;
   --radius-input: 0.5rem;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-ambient: 32s;
 }
 ```
 
@@ -99,6 +103,9 @@ The canonical tokens are maintained in `tokens.css`; all application CSS consume
   "radius": {
     "card": { "$type": "dimension", "$value": "0.75rem" },
     "input": { "$type": "dimension", "$value": "0.5rem" }
+  },
+  "duration": {
+    "ambient": { "$type": "duration", "$value": "32s" }
   }
 }
 ```

@@ -1,26 +1,10 @@
-"use client";
-
 import type { ReactNode } from "react";
-import { useEffect, useState } from "react";
+import { MotionScope } from "@/components/motion-scope";
 
 export function ProductMain({ children }: { children: ReactNode }) {
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    let secondFrame = 0;
-    const firstFrame = requestAnimationFrame(() => {
-      secondFrame = requestAnimationFrame(() => setReady(true));
-    });
-
-    return () => {
-      cancelAnimationFrame(firstFrame);
-      cancelAnimationFrame(secondFrame);
-    };
-  }, []);
-
   return (
-    <main className={`product-main motion-sequence${ready ? " is-ready" : ""}`} id="product-main">
+    <MotionScope className="product-main" id="product-main" mode="product">
       {children}
-    </main>
+    </MotionScope>
   );
 }

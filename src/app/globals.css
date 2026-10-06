@@ -1,5 +1,5 @@
-/* Hallmark · genre: atmospheric product UI · macrostructure: Workbench · tone: assured, alive, technical · audience: new and returning zoo operators · use: read habitat state, launch a bounded cycle, verify the trace · theme: studied-DNA (source: higgspad.com), adapted as “midnight biome” · axes: dark / rounded-geometric / acid-lime · enrichment: E5 operational topology with supplied species art · craft: tier-B SVG/CSS composition · nav: N1b persistent product nav · footer: Ft2 utility strip · contrast: pass (40–41) · slop: pass (42–45) · honest: pass (46) · chrome: pass (47) · tokens: pass (48) · responsive: pass (34, 49) · mobile: pass (34, 49, 50–57) · icons: pass (30) */
-/* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V4 */
+/* Hallmark · genre: atmospheric product UI · macrostructure: Workbench · tone: assured, alive, technical · audience: new and returning zoo operators · use: read habitat state, launch a bounded cycle, verify the trace · theme: studied-DNA (visual source: higgspad.com; motion source: butter.video), adapted as “midnight biome” · axes: dark / rounded-geometric / acid-lime · enrichment: E5 operational topology with supplied species art · craft: tier-B SVG/CSS composition · nav: N1b persistent product nav · footer: Ft2 utility strip · contrast: pass (40–41) · slop: pass (42–45) · honest: pass (46) · chrome: pass (47) · tokens: pass (48) · responsive: pass (34, 49) · mobile: pass (34, 49, 50–57) · icons: pass (30) */
+/* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5 */
 @import "../../tokens.css";
 
 html,
@@ -2826,6 +2826,188 @@ body {
   .motion-sequence.is-ready > :not(.zoo-dashboard),
   .motion-sequence.is-ready .zoo-dashboard > *,
   .motion-sequence.is-ready .operator-home__profile > * { animation: none; }
+}
+
+/* Butter motion study — restrained to one entrance, kinetic CTAs, and a controllable live rail. */
+.motion-scope--landing [data-motion-item],
+.motion-scope--product > :not(.zoo-dashboard),
+.motion-scope--product .zoo-dashboard > * {
+  will-change: opacity, transform;
+}
+
+.motion-scope--landing[data-motion-ready="false"] [data-motion-item],
+.motion-scope--product[data-motion-ready="false"] > :not(.zoo-dashboard),
+.motion-scope--product[data-motion-ready="false"] .zoo-dashboard > * {
+  opacity: 0;
+  transform: translateY(var(--space-xs));
+}
+
+.motion-scope--landing[data-motion-ready="true"] [data-motion-item],
+.motion-scope--product[data-motion-ready="true"] > :not(.zoo-dashboard),
+.motion-scope--product[data-motion-ready="true"] .zoo-dashboard > * {
+  animation: motion-scope-enter var(--dur-long) var(--ease-out) both;
+}
+
+.motion-scope--landing[data-motion-ready="true"] [data-motion-item="1"],
+.motion-scope--product[data-motion-ready="true"] > :not(.zoo-dashboard):nth-child(2),
+.motion-scope--product[data-motion-ready="true"] .zoo-dashboard > *:nth-child(2) {
+  animation-delay: 80ms;
+}
+
+.motion-scope--landing[data-motion-ready="true"] [data-motion-item="2"],
+.motion-scope--product[data-motion-ready="true"] > :not(.zoo-dashboard):nth-child(3),
+.motion-scope--product[data-motion-ready="true"] .zoo-dashboard > *:nth-child(3) {
+  animation-delay: 150ms;
+}
+
+.motion-scope--product[data-motion-ready="true"] > :not(.zoo-dashboard):nth-child(n + 4),
+.motion-scope--product[data-motion-ready="true"] .zoo-dashboard > *:nth-child(n + 4) {
+  animation-delay: 210ms;
+}
+
+@keyframes motion-scope-enter {
+  from { opacity: 0; transform: translateY(var(--space-xs)); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.kinetic-link__window {
+  height: 1.2em;
+  display: block;
+  overflow: hidden;
+  line-height: 1.2;
+}
+
+.kinetic-link__track {
+  display: grid;
+  transition: transform var(--dur-short) var(--ease-out);
+}
+
+.kinetic-link__track > span {
+  height: 1.2em;
+  display: block;
+  white-space: nowrap;
+}
+
+.kinetic-link:focus-visible .kinetic-link__track {
+  transform: translateY(-50%);
+}
+
+.habitat-motion-rail {
+  width: min(100%, var(--page-max));
+  min-height: 4.5rem;
+  margin-inline: auto !important;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
+  border-block: var(--rule-hair) solid var(--color-rule-2);
+  overflow: hidden;
+}
+
+.habitat-motion-rail__viewport {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.habitat-motion-rail__track {
+  width: max-content;
+  display: flex;
+  animation: habitat-rail-flow var(--dur-ambient) linear infinite;
+  will-change: transform;
+}
+
+.habitat-motion-rail__set {
+  display: flex;
+  align-items: center;
+  flex: none;
+}
+
+.habitat-motion-rail__item {
+  min-height: 4.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding-inline: var(--space-lg);
+  border-inline-end: var(--rule-hair) solid var(--color-rule);
+  color: var(--color-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.habitat-motion-rail__item b {
+  color: var(--color-ink);
+  font-weight: 600;
+}
+
+.habitat-motion-rail__item em {
+  color: var(--color-accent);
+  font-style: normal;
+}
+
+.habitat-motion-rail__control {
+  min-width: 8.5rem;
+  min-height: 4.5rem;
+  border: 0;
+  border-inline-start: var(--rule-hair) solid var(--color-rule-2);
+  border-radius: 0;
+  background: var(--color-paper-2);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  transition: color var(--dur-short) var(--ease-out), background-color var(--dur-short) var(--ease-out);
+}
+
+.habitat-motion-rail[data-paused="true"] .habitat-motion-rail__track {
+  animation-play-state: paused;
+}
+
+.habitat-motion-rail__control:focus-visible {
+  outline: var(--rule-fine) solid var(--color-focus);
+  outline-offset: calc(-1 * var(--rule-fine));
+}
+
+.habitat-motion-rail__control:active {
+  background: var(--color-accent-soft);
+}
+
+@keyframes habitat-rail-flow {
+  to { transform: translate3d(-50%, 0, 0); }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .kinetic-link:hover .kinetic-link__track { transform: translateY(-50%); }
+  .habitat-motion-rail__viewport:hover .habitat-motion-rail__track { animation-play-state: paused; }
+  .habitat-motion-rail__control:hover { background: var(--color-paper-3); color: var(--color-accent); }
+}
+
+@media (max-width: 40rem) {
+  .habitat-motion-rail { grid-template-columns: minmax(0, 1fr); }
+  .habitat-motion-rail__control {
+    min-height: 3rem;
+    border-block-start: var(--rule-hair) solid var(--color-rule-2);
+    border-inline-start: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-scope--landing[data-motion-ready] [data-motion-item],
+  .motion-scope--product[data-motion-ready] > :not(.zoo-dashboard),
+  .motion-scope--product[data-motion-ready] .zoo-dashboard > * {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+
+  .kinetic-link__track { transition: none; }
+  .kinetic-link:focus-visible .kinetic-link__track,
+  .kinetic-link:hover .kinetic-link__track { transform: none; }
+  .habitat-motion-rail__track { animation: none; }
 }
 
 /* Enclosure builder and real operator mutations. */

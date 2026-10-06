@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { HabitatMotionRail } from "@/components/habitat-motion-rail";
+import { KineticLink } from "@/components/kinetic-link";
+import { MotionScope } from "@/components/motion-scope";
 import { OrchestratorMap } from "@/components/orchestrator-map";
 
 export const metadata: Metadata = {
@@ -49,12 +52,12 @@ export default function HomePage() {
           <span>AI AGENT ZOO</span>
         </Link>
         <span className="landing-nav__status"><i aria-hidden="true" />LOCAL HABITAT ONLINE</span>
-        <Link className="landing-nav__entry" href="/zoo">ENTER ZOO <span aria-hidden="true">↗</span></Link>
+        <KineticLink className="landing-nav__entry" href="/zoo" label="ENTER ZOO" />
       </header>
 
-      <main className="landing-main" id="landing-content">
+      <MotionScope className="landing-main" id="landing-content" mode="landing">
         <section className="landing-hero" aria-labelledby="landing-title">
-          <div className="landing-hero__copy landing-reveal">
+          <div className="landing-hero__copy" data-motion-item="0">
             <p className="landing-hero__signal">GROK ORCHESTRATION / VISUAL PREVIEW</p>
             <h1 id="landing-title">ONE MIND.<br />FOUR INSTINCTS.</h1>
             <p className="landing-hero__lede">
@@ -62,7 +65,7 @@ export default function HomePage() {
               build, remember, and guard — while every handoff leaves a trace you can inspect.
             </p>
             <div className="landing-hero__actions">
-              <Link className="landing-cta" href="/zoo">ENTER THE ZOO <span aria-hidden="true">↗</span></Link>
+              <KineticLink className="landing-cta" href="/zoo" label="ENTER THE ZOO" />
               <Link className="landing-text-link" href="/agents">MEET THE ANIMALS <span aria-hidden="true">↗</span></Link>
             </div>
             <dl className="landing-hero__facts">
@@ -72,10 +75,12 @@ export default function HomePage() {
             </dl>
           </div>
 
-          <div className="landing-hero__visual landing-reveal landing-reveal--late">
+          <div className="landing-hero__visual" data-motion-item="1">
             <OrchestratorMap />
           </div>
         </section>
+
+        <HabitatMotionRail />
 
         <section className="landing-sequence" aria-labelledby="sequence-title">
           <div className="landing-sequence__intro">
@@ -125,12 +130,12 @@ export default function HomePage() {
             </article>
           </div>
         </section>
-      </main>
+      </MotionScope>
 
       {/* Ft5: the landing closes with a statement and one decisive route into the product. */}
       <footer className="landing-footer">
         <p>Autonomy should leave evidence.</p>
-        <Link href="/zoo">OPEN THE LIVE HABITAT <span aria-hidden="true">↗</span></Link>
+        <KineticLink className="landing-footer__entry" href="/zoo" label="OPEN THE LIVE HABITAT" />
         <small>AI Agent Zoo · Local protocol preview</small>
       </footer>
     </div>
