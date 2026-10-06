@@ -27,7 +27,11 @@ export async function POST(request: Request) {
   }
 
   try {
-    const agent = await createAgent({ ...parsed.data, ownerAddress: auth.session.address });
+    const agent = await createAgent({
+      ...parsed.data,
+      ownerAddress: auth.session.address,
+      allowSystemEnclosure: auth.session.role === "admin",
+    });
     return Response.json({ agent }, { status: 201 });
   } catch (error) {
     if (error instanceof Error && error.message === "ENCLOSURE_NOT_FOUND") {

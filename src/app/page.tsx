@@ -5,6 +5,8 @@ import { HabitatMotionRail } from "@/components/habitat-motion-rail";
 import { KineticLink } from "@/components/kinetic-link";
 import { MotionScope } from "@/components/motion-scope";
 import { OrchestratorMap } from "@/components/orchestrator-map";
+import { WalletSessionControl } from "@/components/wallet-session-control";
+import { getSession } from "@/lib/auth/session";
 
 export const metadata: Metadata = {
   title: "AI Agent Zoo — One mind, four instincts",
@@ -40,7 +42,8 @@ const commandChain = [
   },
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const session = await getSession();
   return (
     <div className="landing-shell">
       <a className="skip-link" href="#landing-content">Skip to content</a>
@@ -51,8 +54,8 @@ export default function HomePage() {
           <span className="landing-brand__mark" aria-hidden="true">AZ</span>
           <span>AI AGENT ZOO</span>
         </Link>
-        <span className="landing-nav__status"><i aria-hidden="true" />LOCAL HABITAT ONLINE</span>
-        <KineticLink className="landing-nav__entry" href="/zoo" label="ENTER ZOO" />
+        <span className="landing-nav__status"><i aria-hidden="true" />PUBLIC HABITAT ONLINE</span>
+        <div className="landing-nav__actions"><Link href="/demo">TRY DEMO</Link><WalletSessionControl compact session={session} /><KineticLink className="landing-nav__entry" href="/zoo" label="ENTER ZOO" /></div>
       </header>
 
       <MotionScope className="landing-main" id="landing-content" mode="landing">
@@ -66,7 +69,7 @@ export default function HomePage() {
             </p>
             <div className="landing-hero__actions">
               <KineticLink className="landing-cta" href="/zoo" label="ENTER THE ZOO" />
-              <Link className="landing-text-link" href="/agents">MEET THE ANIMALS <span aria-hidden="true">↗</span></Link>
+              <Link className="landing-text-link" href="/demo">RUN A GUEST DEMO <span aria-hidden="true">↗</span></Link>
             </div>
             <dl className="landing-hero__facts">
               <div><dt>Node</dt><dd>Local</dd></div>
@@ -123,7 +126,7 @@ export default function HomePage() {
               <h3>Deliberately next</h3>
               <ul>
                 <li>Live Grok runtime dispatch</li>
-                <li>Signed agent identity</li>
+                <li>Federated identity beyond wallet guardians</li>
                 <li>Federated enclosure-to-enclosure events</li>
                 <li>Off-chain compute accounting before token utility</li>
               </ul>
@@ -135,8 +138,8 @@ export default function HomePage() {
       {/* Ft5: the landing closes with a statement and one decisive route into the product. */}
       <footer className="landing-footer">
         <p>Autonomy should leave evidence.</p>
-        <KineticLink className="landing-footer__entry" href="/zoo" label="OPEN THE LIVE HABITAT" />
-        <small>AI Agent Zoo · Local protocol preview</small>
+        <KineticLink className="landing-footer__entry" href="/demo" label="RUN THE PUBLIC DEMO" />
+        <small>AI Agent Zoo · Wallet-signed guardian access</small>
       </footer>
     </div>
   );

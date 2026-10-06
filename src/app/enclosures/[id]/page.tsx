@@ -5,6 +5,9 @@ import { AgentRow, EmptyState, PageHeading } from "@/components/product-ui";
 import { RefillButton } from "@/components/refill-button";
 import { ZooShell } from "@/components/zoo-shell";
 import { formatDate, formatEventType } from "@/lib/format";
+import { shortAddress } from "@/lib/auth/config";
+import { canManageResource } from "@/lib/auth/authorization";
+import { getSession } from "@/lib/auth/session";
 import { getEnclosure, getEnclosureAgents, getRecentEvents } from "@/lib/zoo-store";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +17,8 @@ export default async function EnclosurePage({ params }: { params: Promise<{ id: 
   const enclosure = await getEnclosure(id);
   if (!enclosure) notFound();
 
-  const [agents, recentEvents] = await Promise.all([getEnclosureAgents(id), getRecentEvents(100)]);
+  const [agents, recentEvents, session] = await Promise.all([getEnclosureAgents(id), getRecentEvents(100), getSession()]);
+  const canManage = canManageResource(session, enclosure.ownerAddress);
   const residentIds = new Set(agents.map((agent) => agent.id));
   const events = recentEvents.filter((event) => residentIds.has(event.agentId) || Boolean(event.targetAgentId && residentIds.has(event.targetAgentId))).slice(0, 12);
 
@@ -24,13 +28,13 @@ export default async function EnclosurePage({ params }: { params: Promise<{ id: 
         eyebrow={`Enclosure / ${enclosure.id}`}
         title={enclosure.name.toUpperCase()}
         description={`${enclosure.description} Territory: ${enclosure.territory}.`}
-        actions={<><Link className="action-button" href="/enclosures">ALL ENCLOSURES</Link><RefillButton endpoint={`/api/enclosures/${enclosure.id}/refill`} label="Refill habitat" /></>}
+        actions={<><Link className="action-button" href="/enclosures">ALL ENCLOSURES</Link>{canManage ? <RefillButton endpoint={`/api/enclosures/${enclosure.id}/refill`} label="Refill habitat" /> : null}</>}
       />
 
       <section className="enclosure-status" aria-label="Enclosure status">
         <div><span>Residents</span><strong>{enclosure.agentCount}</strong></div>
         <div><span>Compute feed</span><strong>{enclosure.feed}<i> / {enclosure.feedMax}</i></strong><meter max={Math.max(1, enclosure.feedMax)} value={enclosure.feed}>{enclosure.feed} of {enclosure.feedMax}</meter></div>
-        <div><span>Runtime</span><strong>LOCAL</strong><small>Off-chain operator control</small></div>
+        <div><span>Guardian</span><strong>{enclosure.ownerAddress ? shortAddress(enclosure.ownerAddress) : "SYSTEM"}</strong><small>{canManage ? "Control available" : "Public read only"}</small></div>
       </section>
 
       <section className="directory-panel">

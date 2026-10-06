@@ -1,12 +1,7 @@
 import { createHash } from "node:crypto";
 
 export function requestOrigin(request: Request) {
-  const requestUrl = new URL(request.url);
-  const forwardedHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
-  const forwardedProto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
-  return forwardedHost
-    ? `${forwardedProto ?? requestUrl.protocol.replace(":", "")}://${forwardedHost}`
-    : requestUrl.origin;
+  return new URL(request.url).origin;
 }
 
 export function isSameOrigin(request: Request) {

@@ -52,6 +52,17 @@ function value(row: Row, key: string) {
   return row[key];
 }
 
+async function ensureColumn(table: "agents" | "enclosures", column: string, definition: string) {
+  const columns = await zooStore.execute(`PRAGMA table_info(${table})`);
+  if (columns.rows.some((row) => String(value(row, "name")) === column)) return;
+  try {
+    await zooStore.execute(`ALTER TABLE ${table} ADD COLUMN ${definition}`);
+  } catch (error) {
+    const refreshed = await zooStore.execute(`PRAGMA table_info(${table})`);
+    if (!refreshed.rows.some((row) => String(value(row, "name")) === column)) throw error;
+  }
+}
+
 function mapAgent(row: Row): Agent {
   return {
     id: String(value(row, "id")),
@@ -208,21 +219,14 @@ async function initializeStore() {
 
   await zooStore.batch(schema, "write");
 
-  const columns = await zooStore.execute("PRAGMA table_info(agents)");
-  if (!columns.rows.some((row) => String(value(row, "name")) === "enclosure_id")) {
-    await zooStore.execute("ALTER TABLE agents ADD COLUMN enclosure_id TEXT");
-  }
-  if (!columns.rows.some((row) => String(value(row, "name")) === "owner_address")) {
-    await zooStore.execute("ALTER TABLE agents ADD COLUMN owner_address TEXT");
-  }
-  const enclosureColumns = await zooStore.execute("PRAGMA table_info(enclosures)");
-  if (!enclosureColumns.rows.some((row) => String(value(row, "name")) === "owner_address")) {
-    await zooStore.execute("ALTER TABLE enclosures ADD COLUMN owner_address TEXT");
-  }
+  await ensureColumn("agents", "enclosure_id", "enclosure_id TEXT");
+  await ensureColumn("agents", "owner_address", "owner_address TEXT");
+  await ensureColumn("enclosures", "owner_address", "owner_address TEXT");
   await zooStore.execute("CREATE INDEX IF NOT EXISTS agents_enclosure_idx ON agents(enclosure_id, created_at)");
   await zooStore.execute("CREATE INDEX IF NOT EXISTS agents_owner_idx ON agents(owner_address, created_at)");
   await zooStore.execute("CREATE INDEX IF NOT EXISTS enclosures_owner_idx ON enclosures(owner_address, created_at)");
   await zooStore.execute("CREATE INDEX IF NOT EXISTS sessions_address_idx ON auth_sessions(address, expires_at)");
+  await zooStore.execute("CREATE INDEX IF NOT EXISTS rate_limits_expiry_idx ON rate_limits(expires_at)");
 
   await zooStore.execute({
     sql: `INSERT INTO enclosures (id, name, description, territory, created_at)
@@ -362,11 +366,14 @@ export async function createAgent(input: {
   feedMax: number;
   enclosureId: string;
   ownerAddress: string;
+  allowSystemEnclosure?: boolean;
 }): Promise<Agent> {
   await ready();
   const enclosure = await getEnclosure(input.enclosureId);
   if (!enclosure) throw new Error("ENCLOSURE_NOT_FOUND");
-  if (enclosure.ownerAddress !== input.ownerAddress) throw new Error("ENCLOSURE_FORBIDDEN");
+  if (enclosure.ownerAddress !== input.ownerAddress && !input.allowSystemEnclosure) {
+    throw new Error("ENCLOSURE_FORBIDDEN");
+  }
 
   const blueprint = species[input.species];
   const id = `${input.species}-${randomUUID().slice(0, 8)}`;
@@ -725,6 +732,7 @@ export async function consumeRateLimit(input: {
   const windowStart = Math.floor(now / input.windowMs) * input.windowMs;
   const expiresAt = windowStart + input.windowMs;
   const bucket = `${input.scope}:${windowStart}`;
+  await zooStore.execute({ sql: "DELETE FROM rate_limits WHERE expires_at <= ?", args: [now] });
   const result = await zooStore.execute({
     sql: `INSERT INTO rate_limits (rate_key, bucket, count, expires_at)
       VALUES (?, ?, 1, ?)
@@ -767,12 +775,4 @@ export async function setRuntimePaused(paused: boolean, updatedBy: string): Prom
     args: [paused ? "true" : "false", updatedBy, updatedAt],
   });
   return { paused, updatedBy, updatedAt };
-}
-
-export function ownsEnclosure(enclosure: Enclosure, address: string) {
-  return enclosure.ownerAddress?.toLowerCase() === address.toLowerCase();
-}
-
-export function ownsAgent(agent: Agent, address: string) {
-  return agent.ownerAddress?.toLowerCase() === address.toLowerCase();
 }

@@ -1,8 +1,9 @@
 import { z } from "zod";
 
+import { canManageResource } from "@/lib/auth/authorization";
 import { guardMutation } from "@/lib/auth/mutation";
 import { forbiddenResponse } from "@/lib/auth/session";
-import { getAgent, ownsAgent } from "@/lib/zoo-store";
+import { getAgent } from "@/lib/zoo-store";
 import { AgentRunError, runAgentCycle } from "@/lib/zoo/run-agent";
 
 const wakeRequestSchema = z.object({
@@ -19,7 +20,7 @@ export async function POST(request: Request, { params }: RouteContext) {
   const { id } = await params;
   const agent = await getAgent(id);
   if (!agent) return Response.json({ error: "Agent not found" }, { status: 404 });
-  if (auth.session.role !== "admin" && !ownsAgent(agent, auth.session.address)) return forbiddenResponse();
+  if (!canManageResource(auth.session, agent.ownerAddress)) return forbiddenResponse();
 
   let body: unknown = {};
   const rawBody = await request.text();

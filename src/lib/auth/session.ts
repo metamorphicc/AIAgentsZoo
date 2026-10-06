@@ -14,7 +14,8 @@ function hashToken(token: string) {
 export async function getSession(): Promise<AuthSession | null> {
   const token = (await cookies()).get(sessionCookieName)?.value;
   if (!token) return null;
-  return getAuthSession(hashToken(token));
+  const session = await getAuthSession(hashToken(token));
+  return session ? { ...session, role: roleForAddress(session.address) } : null;
 }
 
 export async function issueSession(address: string): Promise<AuthSession> {
