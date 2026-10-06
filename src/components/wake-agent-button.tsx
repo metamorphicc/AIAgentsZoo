@@ -5,13 +5,16 @@ import { useState } from "react";
 
 type WakeAgentButtonProps = {
   agentId: string;
+  allowTask?: boolean;
+  defaultTask?: string;
   disabled?: boolean;
 };
 
-export function WakeAgentButton({ agentId, disabled = false }: WakeAgentButtonProps) {
+export function WakeAgentButton({ agentId, allowTask = false, defaultTask = "", disabled = false }: WakeAgentButtonProps) {
   const router = useRouter();
   const [state, setState] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
+  const [task, setTask] = useState(defaultTask);
 
   async function wakeAgent() {
     setState("loading");
@@ -21,7 +24,7 @@ export function WakeAgentButton({ agentId, disabled = false }: WakeAgentButtonPr
       const response = await fetch(`/api/agents/${agentId}/wake`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
+        body: JSON.stringify(task.trim() ? { task: task.trim() } : {}),
       });
       const result = (await response.json()) as { error?: string };
 
@@ -38,6 +41,7 @@ export function WakeAgentButton({ agentId, disabled = false }: WakeAgentButtonPr
 
   return (
     <div className="wake-control" data-state={state}>
+      {allowTask ? <label className="wake-task"><span>Next cycle task</span><textarea maxLength={1000} onChange={(event) => setTask(event.target.value)} rows={3} value={task} /></label> : null}
       <button className="pill-button pill-button--solid" type="button" onClick={wakeAgent} disabled={disabled || state === "loading"} aria-busy={state === "loading"}>
         {state === "loading" ? <><span className="button-spinner" aria-hidden="true" /> Running cycle</> : state === "success" ? "Cycle complete" : state === "error" ? "Try again" : "Wake agent"}
       </button>

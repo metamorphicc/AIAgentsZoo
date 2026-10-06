@@ -2,14 +2,13 @@ import Link from "next/link";
 
 import { EmptyState, PageHeading } from "@/components/product-ui";
 import { ZooShell } from "@/components/zoo-shell";
-import { getAgents, getRecentEvents } from "@/lib/db";
 import { formatDate, formatEventType } from "@/lib/format";
+import { getAgents, getRecentEvents } from "@/lib/zoo-store";
 
 export const dynamic = "force-dynamic";
 
-export default function TracePage() {
-  const agents = getAgents();
-  const events = getRecentEvents(100);
+export default async function TracePage() {
+  const [agents, events] = await Promise.all([getAgents(), getRecentEvents(100)]);
   const names = new Map(agents.map((agent) => [agent.id, agent.name]));
   return (
     <ZooShell active="trace">

@@ -1,4 +1,4 @@
-import { getAgent, getAgentEvents, getAgentRuns } from "@/lib/db";
+import { getAgent, getAgentEvents, getAgentRuns } from "@/lib/zoo-store";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -6,7 +6,7 @@ type RouteContext = {
 
 export async function GET(_request: Request, { params }: RouteContext) {
   const { id } = await params;
-  const agent = getAgent(id);
+  const agent = await getAgent(id);
 
   if (!agent) {
     return Response.json({ error: "Agent not found" }, { status: 404 });
@@ -14,7 +14,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
 
   return Response.json({
     agent,
-    runs: getAgentRuns(id),
-    events: getAgentEvents(id),
+    runs: await getAgentRuns(id),
+    events: await getAgentEvents(id),
   });
 }

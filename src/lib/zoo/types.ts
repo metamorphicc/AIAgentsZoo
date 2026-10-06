@@ -10,6 +10,7 @@ export const eventTypes = [
   "sighting",
   "request",
   "artifact",
+  "feed_refilled",
   "warning",
   "went_to_sleep",
 ] as const;
@@ -25,8 +26,20 @@ export type Agent = {
   status: AgentStatus;
   feed: number;
   feedMax: number;
+  enclosureId: string;
   task: string;
   lastAwakeAt: string | null;
+  createdAt: string;
+};
+
+export type Enclosure = {
+  id: string;
+  name: string;
+  description: string;
+  territory: string;
+  agentCount: number;
+  feed: number;
+  feedMax: number;
   createdAt: string;
 };
 

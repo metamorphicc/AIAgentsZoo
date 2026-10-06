@@ -2,15 +2,18 @@ import Link from "next/link";
 
 import { AgentMark } from "@/components/product-ui";
 import { ZooShell } from "@/components/zoo-shell";
-import { getAgents, getArtifacts, getRecentEvents } from "@/lib/db";
 import { formatDate, formatEventType, formatStatus } from "@/lib/format";
+import { getAgents, getArtifacts, getEnclosures, getRecentEvents } from "@/lib/zoo-store";
 
 export const dynamic = "force-dynamic";
 
-export default function ZooPage() {
-  const agents = getAgents();
-  const events = getRecentEvents(8);
-  const artifacts = getArtifacts(3);
+export default async function ZooPage() {
+  const [agents, events, artifacts, enclosures] = await Promise.all([
+    getAgents(),
+    getRecentEvents(8),
+    getArtifacts(3),
+    getEnclosures(),
+  ]);
   const agentNames = new Map(agents.map((agent) => [agent.id, agent.name]));
   const feed = agents.reduce((total, agent) => total + agent.feed, 0);
   const feedMax = agents.reduce((total, agent) => total + agent.feedMax, 0);
@@ -18,6 +21,8 @@ export default function ZooPage() {
   const workingAgents = agents.filter((agent) => agent.status === "working").length;
   const sleepingAgents = agents.filter((agent) => agent.status === "sleeping").length;
   const lastEvent = events[0];
+  const foundingIds = ["raven-1", "beaver-1", "owl-1", "meerkat-1"];
+  const networkAgents = foundingIds.flatMap((id) => agents.find((agent) => agent.id === id) ?? []);
 
   return (
     <ZooShell active="zoo">
@@ -38,18 +43,18 @@ export default function ZooPage() {
             </div>
 
             <div className="operator-home__brief">
-              <h2>{agents.length} species are connected.</h2>
-              <p>Start with Raven. Its next bounded cycle scouts the habitat, writes to the public trace, and can route a useful signal to Beaver.</p>
+              <h2>{agents.length} animals across {enclosures.length} enclosure{enclosures.length === 1 ? "" : "s"}.</h2>
+              <p>Grok watches the founding pipeline while you create territories, add residents, assign tasks, and publish visible signals between them.</p>
             </div>
 
             <div className="operator-home__actions">
-              <Link className="action-button action-button--accent" href="/agents/raven-1">OPEN RAVEN</Link>
+              <Link className="action-button action-button--accent" href="/enclosures">BUILD HABITAT</Link>
               <Link className="action-button" href="/manage">MANAGE LIMITS</Link>
             </div>
 
             <dl className="operator-home__facts">
-              <div><dt>Control</dt><dd>Explicit</dd></div>
-              <div><dt>Route</dt><dd>Event ledger</dd></div>
+              <div><dt>Enclosures</dt><dd>{enclosures.length}</dd></div>
+              <div><dt>Control</dt><dd>Operator</dd></div>
               <div><dt>Feed</dt><dd>{feed} / {feedMax}</dd></div>
             </dl>
           </div>
@@ -70,7 +75,7 @@ export default function ZooPage() {
                 <Link href="/artifacts"><span>03</span><div><strong>Inspect the result</strong><small>Open Beaver&apos;s output when it is published.</small></div><i aria-hidden="true">↗</i></Link>
               </li>
             </ol>
-            <p>Grok&apos;s command layer is visual in this build. Agent cycles remain explicit and operator-controlled.</p>
+            <p>Grok&apos;s command layer is visual in this build. <Link href="/enclosures">Create your own enclosure ↗</Link></p>
           </aside>
         </header>
 
@@ -86,9 +91,9 @@ export default function ZooPage() {
               <small>Shared bounded cycle budget across all species</small>
             </div>
             <dl className="habitat-stats">
-              <div><dt>Species</dt><dd>{String(agents.length).padStart(2, "0")}</dd><small>{sleepingAgents} sleeping · {workingAgents} working</small></div>
+              <div><dt>Animals</dt><dd>{String(agents.length).padStart(2, "0")}</dd><small>{sleepingAgents} sleeping · {workingAgents} working</small></div>
               <div><dt>Trace</dt><dd>{String(events.length).padStart(2, "0")}</dd><small>Events in current window</small></div>
-              <div><dt>Outputs</dt><dd>{String(artifacts.length).padStart(2, "0")}</dd><small>Published artifacts</small></div>
+              <div><dt>Enclosures</dt><dd>{String(enclosures.length).padStart(2, "0")}</dd><small>Registered territories</small></div>
             </dl>
           </div>
         </section>
@@ -108,7 +113,7 @@ export default function ZooPage() {
               <i>VISUAL PREVIEW</i>
             </div>
             <div className="network-core"><span aria-hidden="true" /><b>EVENT LEDGER</b><small>{liveSignal ? `${agentNames.get(liveSignal.agentId)} → ${agentNames.get(liveSignal.targetAgentId ?? "")}` : "Waiting for a routed signal"}</small></div>
-            {agents.map((agent) => (
+            {networkAgents.map((agent) => (
               <Link className={`network-agent network-agent--${agent.species}`} href={`/agents/${agent.id}`} key={agent.id}>
                 <AgentMark agent={agent} />
                 <span><b>{agent.name}</b><small>{agent.role} / {formatStatus(agent.status)}</small></span>

@@ -33,7 +33,9 @@ The visual direction is an atmospheric **midnight biome**: dark paper, acid-lime
 - `ZooNavigation`: shared real-route navigation.
 - `PageHeading`: one dominant page identity plus optional actions.
 - `AgentRow` and `AgentMark`: consistent registry identity.
-- `WakeAgentButton`: the only current runtime mutation; no fake controls are shown.
+- `WakeAgentButton`: runs an animal cycle with an optional operator task.
+- `RefillButton`: explicitly restores bounded compute feed and writes the action to the ledger.
+- `EnclosureWorkbench`: creates enclosures and animals and publishes operator signals; every control calls a real API route.
 - Status labels pair color with text and a dot.
 
 ## Route Map
@@ -43,6 +45,8 @@ The visual direction is an atmospheric **midnight biome**: dark paper, acid-lime
 | `/zoo` | Operational overview and live topology |
 | `/agents` | Agent registry |
 | `/agents/[id]` | Agent passport, controls, runs, and trace |
+| `/enclosures` | Enclosure directory and creation workbench |
+| `/enclosures/[id]` | Territory status, residents, activity, and habitat controls |
 | `/trace` | Shared event ledger |
 | `/artifacts` | Artifact registry |
 | `/artifacts/[id]` | Artifact content and provenance |

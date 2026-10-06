@@ -2,13 +2,13 @@ import Link from "next/link";
 
 import { AgentMark, PageHeading } from "@/components/product-ui";
 import { ZooShell } from "@/components/zoo-shell";
-import { getAgents } from "@/lib/db";
 import { formatStatus } from "@/lib/format";
+import { getAgents } from "@/lib/zoo-store";
 
 export const dynamic = "force-dynamic";
 
-export default function TasksPage() {
-  const agents = getAgents();
+export default async function TasksPage() {
+  const agents = await getAgents();
   return (
     <ZooShell active="tasks">
       <PageHeading eyebrow="Habitat board / Assigned work" title="TASKS" description="The actual work attached to each resident. Tasks execute only when their agent wakes or receives a compatible event." />
