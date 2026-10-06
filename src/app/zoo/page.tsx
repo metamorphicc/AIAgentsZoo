@@ -48,11 +48,11 @@ export default async function ZooPage() {
 
             <div className="operator-home__brief">
               <h2>{agents.length} animals across {enclosures.length} enclosure{enclosures.length === 1 ? "" : "s"}.</h2>
-              <p>{session ? `Wallet ${shortAddress(session.address)} can create owned territories, add residents, assign tasks, and publish visible signals.` : "Explore every public trace without a wallet, or run one isolated mission before signing in as a guardian."}</p>
+              <p>{session ? `Wallet ${shortAddress(session.address)} can create owned territories, add residents, assign tasks, and publish visible signals.` : "Explore the public habitat and every visible trace. Connect a wallet when you are ready to create and operate your own residents."}</p>
             </div>
 
             <div className="operator-home__actions">
-              <Link className="action-button action-button--accent" href={session ? "/enclosures" : "/demo"}>{session ? "BUILD HABITAT" : "RUN GUEST DEMO"}</Link>
+              <Link className="action-button action-button--accent" href="/enclosures">{session ? "BUILD HABITAT" : "CONNECT TO BUILD"}</Link>
               <Link className="action-button" href={session ? "/manage" : "/agents"}>{session ? "MANAGE LIMITS" : "EXPLORE ANIMALS"}</Link>
             </div>
 
@@ -70,7 +70,7 @@ export default async function ZooPage() {
             </div>
             <ol>
               <li>
-                <Link href={session?.role === "admin" ? "/agents/raven-1" : "/demo"}><span>01</span><div><strong>{session?.role === "admin" ? "Wake Raven" : "Run the sandbox"}</strong><small>{session?.role === "admin" ? "Give the scout one bounded cycle." : "Watch a temporary cycle without changing public state."}</small></div><i aria-hidden="true">↗</i></Link>
+                <Link href={session?.role === "admin" ? "/agents/raven-1" : session ? "/enclosures" : "/agents"}><span>01</span><div><strong>{session?.role === "admin" ? "Wake Raven" : session ? "Create an enclosure" : "Meet the animals"}</strong><small>{session?.role === "admin" ? "Give the scout one bounded cycle." : session ? "Define a territory and add its first resident." : "Inspect each species, role, budget, and public history."}</small></div><i aria-hidden="true">↗</i></Link>
               </li>
               <li>
                 <Link href="/trace"><span>02</span><div><strong>Follow the handoff</strong><small>Read every observation and routed signal.</small></div><i aria-hidden="true">↗</i></Link>
@@ -79,7 +79,7 @@ export default async function ZooPage() {
                 <Link href="/artifacts"><span>03</span><div><strong>Inspect the result</strong><small>Open Beaver&apos;s output when it is published.</small></div><i aria-hidden="true">↗</i></Link>
               </li>
             </ol>
-            <p>Grok&apos;s command layer is visual in this build. <Link href={session ? "/enclosures" : "/demo"}>{session ? "Create your own enclosure" : "Try it without a wallet"} ↗</Link></p>
+            <p>Grok&apos;s command layer is visual in this build. <Link href={session ? "/enclosures" : "/manage"}>{session ? "Create your own enclosure" : "Connect a guardian wallet"} ↗</Link></p>
           </aside>
         </header>
 

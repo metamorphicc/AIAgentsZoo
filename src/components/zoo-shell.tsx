@@ -23,14 +23,13 @@ export async function ZooShell({ active, children }: ZooShellProps) {
         </Link>
         <ZooNavigation active={active} />
         <div className="product-nav-actions">
-          <Link aria-current={active === "demo" ? "page" : undefined} className="nav-status" href="/demo"><span aria-hidden="true" />TRY DEMO</Link>
           <Link aria-current={active === "manage" ? "page" : undefined} className="nav-control" href="/manage">MANAGE</Link>
           <WalletSessionControl compact session={session} />
         </div>
         <details className="product-mobile-menu">
           <summary aria-label="Open product navigation">MENU</summary>
           <nav aria-label="Mobile product navigation">
-            {[...zooNavigation, { id: "demo", label: "Demo", href: "/demo" }, { id: "manage", label: "Manage", href: "/manage" }, { id: "protocol", label: "Protocol", href: "/protocol" }].map((item) => (
+            {[...zooNavigation, { id: "manage", label: "Manage", href: "/manage" }, { id: "protocol", label: "Protocol", href: "/protocol" }].map((item) => (
               <Link aria-current={active === item.id ? "page" : undefined} href={item.href} key={item.id}>{item.label}</Link>
             ))}
             <WalletSessionControl compact session={session} />

@@ -44,7 +44,6 @@ The visual direction is an atmospheric **midnight biome**: dark paper, acid-lime
 - `ModelLoadingState`: real GLB loading progress inside the persistent animal viewport.
 - `WalletSessionControl`: injected-wallet EIP-4361 sign-in, guardian identity, and local session exit.
 - `AccessPanel`: public-read/guardian-write boundary shown at the point where control begins.
-- `DemoRunner`: isolated, rate-limited Grok-to-animal proof that never mutates the shared ledger.
 - `RuntimeControlPanel`: administrator-only global pause/resume control.
 - Status labels pair color with text and a dot.
 
@@ -53,7 +52,6 @@ The visual direction is an atmospheric **midnight biome**: dark paper, acid-lime
 | Route | Purpose |
 | --- | --- |
 | `/zoo` | Operational overview and live topology |
-| `/demo` | Isolated visitor run with no wallet or durable writes |
 | `/agents` | Agent registry |
 | `/agents/[id]` | Agent passport, controls, runs, and trace |
 | `/animals` and `/animals/[id]` | Human-readable aliases for the agent registry and passports |
@@ -69,7 +67,7 @@ The visual direction is an atmospheric **midnight biome**: dark paper, acid-lime
 
 ## Access Model
 
-- Visitor: public read access plus the isolated demo.
+- Visitor: public read access to the habitat, animals, trace, artifacts, tasks, and node status.
 - Guardian: EIP-4361 wallet session; may create and operate resources owned by that wallet.
 - Administrator: allowlisted wallet; may operate system residents and the global runtime switch.
 - Every mutation is checked server-side for origin, session, ownership, and a durable rate limit.
