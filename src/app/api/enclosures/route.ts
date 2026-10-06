@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { guardMutation } from "@/lib/auth/mutation";
 import { createEnclosure, getEnclosures } from "@/lib/zoo-store";
 
 const createEnclosureSchema = z.object({
@@ -13,10 +14,12 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const auth = await guardMutation(request, { scope: "create-enclosure", limit: 5, windowMs: 60 * 60 * 1000 });
+  if ("response" in auth) return auth.response;
   const parsed = createEnclosureSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
     return Response.json({ error: "Enclosure input is invalid", details: parsed.error.flatten() }, { status: 400 });
   }
-  const enclosure = await createEnclosure(parsed.data);
+  const enclosure = await createEnclosure({ ...parsed.data, ownerAddress: auth.session.address });
   return Response.json({ enclosure }, { status: 201 });
 }

@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { guardMutation } from "@/lib/auth/mutation";
 import { createAgent, getAgents } from "@/lib/zoo-store";
 import { speciesIds } from "@/lib/zoo/types";
 
@@ -18,17 +19,22 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const auth = await guardMutation(request, { scope: "create-agent", limit: 12, windowMs: 60 * 60 * 1000 });
+  if ("response" in auth) return auth.response;
   const parsed = createAgentSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
     return Response.json({ error: "Animal input is invalid", details: parsed.error.flatten() }, { status: 400 });
   }
 
   try {
-    const agent = await createAgent(parsed.data);
+    const agent = await createAgent({ ...parsed.data, ownerAddress: auth.session.address });
     return Response.json({ agent }, { status: 201 });
   } catch (error) {
     if (error instanceof Error && error.message === "ENCLOSURE_NOT_FOUND") {
       return Response.json({ error: "Enclosure not found" }, { status: 404 });
+    }
+    if (error instanceof Error && error.message === "ENCLOSURE_FORBIDDEN") {
+      return Response.json({ error: "This wallet does not own that enclosure" }, { status: 403 });
     }
     return Response.json({ error: "The animal could not be created" }, { status: 500 });
   }

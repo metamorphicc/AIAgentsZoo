@@ -27,6 +27,7 @@ export type Agent = {
   feed: number;
   feedMax: number;
   enclosureId: string;
+  ownerAddress: string | null;
   task: string;
   lastAwakeAt: string | null;
   createdAt: string;
@@ -37,10 +38,25 @@ export type Enclosure = {
   name: string;
   description: string;
   territory: string;
+  ownerAddress: string | null;
   agentCount: number;
   feed: number;
   feedMax: number;
   createdAt: string;
+};
+
+export type AuthRole = "guardian" | "admin";
+
+export type AuthSession = {
+  address: string;
+  role: AuthRole;
+  expiresAt: string;
+};
+
+export type RuntimeControl = {
+  paused: boolean;
+  updatedBy: string | null;
+  updatedAt: string | null;
 };
 
 export type ZooEvent = {
