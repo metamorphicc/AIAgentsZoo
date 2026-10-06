@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { ProductMain } from "@/components/product-main";
 import { ZooNavigation, type ZooRoute, zooNavigation } from "@/components/zoo-rail";
 
 type ZooShellProps = {
@@ -31,7 +32,7 @@ export function ZooShell({ active, children }: ZooShellProps) {
           </nav>
         </details>
       </header>
-      <main className="product-main" id="product-main">{children}</main>
+      <ProductMain>{children}</ProductMain>
       <footer className="product-footer">
         <p>Autonomous agents. Observable work.</p>
         <nav aria-label="Utility navigation">

@@ -2780,3 +2780,50 @@ body {
   .zoo-dashboard .network-stage .signal-path,
   .zoo-dashboard .network-agent .agent-mark-image { animation: none; }
 }
+
+/* Hydration-aware product entrance: sections begin only after the browser is ready. */
+.motion-sequence:not(.is-ready) > :not(.zoo-dashboard),
+.motion-sequence:not(.is-ready) .zoo-dashboard > *,
+.motion-sequence:not(.is-ready) .operator-home__profile > * {
+  opacity: 0;
+  transform: translateY(var(--space-sm));
+}
+
+.motion-sequence.is-ready > :not(.zoo-dashboard),
+.motion-sequence.is-ready .zoo-dashboard > * {
+  animation: product-enter 500ms var(--ease-out) both;
+}
+
+.motion-sequence.is-ready > :not(.zoo-dashboard):nth-child(2),
+.motion-sequence.is-ready .zoo-dashboard > *:nth-child(2) { animation-delay: 90ms; }
+.motion-sequence.is-ready > :not(.zoo-dashboard):nth-child(3),
+.motion-sequence.is-ready .zoo-dashboard > *:nth-child(3) { animation-delay: 180ms; }
+.motion-sequence.is-ready > :not(.zoo-dashboard):nth-child(n + 4),
+.motion-sequence.is-ready .zoo-dashboard > *:nth-child(n + 4) { animation-delay: 240ms; }
+
+.motion-sequence.is-ready .operator-home__profile > * {
+  animation: product-enter 420ms var(--ease-out) both;
+}
+
+.motion-sequence.is-ready .operator-home__profile > *:nth-child(2) { animation-delay: 80ms; }
+.motion-sequence.is-ready .operator-home__profile > *:nth-child(3) { animation-delay: 150ms; }
+.motion-sequence.is-ready .operator-home__profile > *:nth-child(4) { animation-delay: 220ms; }
+.motion-sequence.is-ready .operator-home__profile > *:nth-child(5) { animation-delay: 280ms; }
+
+@keyframes product-enter {
+  from { opacity: 0; transform: translateY(var(--space-sm)); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-sequence:not(.is-ready) > :not(.zoo-dashboard),
+  .motion-sequence:not(.is-ready) .zoo-dashboard > *,
+  .motion-sequence:not(.is-ready) .operator-home__profile > * {
+    opacity: 1;
+    transform: none;
+  }
+
+  .motion-sequence.is-ready > :not(.zoo-dashboard),
+  .motion-sequence.is-ready .zoo-dashboard > *,
+  .motion-sequence.is-ready .operator-home__profile > * { animation: none; }
+}

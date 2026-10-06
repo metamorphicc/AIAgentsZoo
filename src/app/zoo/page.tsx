@@ -22,7 +22,7 @@ export default function ZooPage() {
   return (
     <ZooShell active="zoo">
       <div className="zoo-dashboard">
-        <header className="operator-home dashboard-entry dashboard-entry--first">
+        <header className="operator-home">
           <div className="operator-home__profile">
             <div className="operator-home__bar">
               <span>OPERATOR HOME</span>
@@ -74,7 +74,7 @@ export default function ZooPage() {
           </aside>
         </header>
 
-        <section className="habitat-pulse dashboard-entry dashboard-entry--second" aria-labelledby="habitat-pulse-title">
+        <section className="habitat-pulse" aria-labelledby="habitat-pulse-title">
           <div className="habitat-pulse__head">
             <h2 id="habitat-pulse-title">Habitat pulse</h2>
             <p>{lastEvent ? <>Last event <time dateTime={lastEvent.createdAt}>{formatDate(lastEvent.createdAt)}</time></> : "No events recorded yet"}</p>
@@ -93,7 +93,7 @@ export default function ZooPage() {
           </div>
         </section>
 
-      <section className="zoo-overview-grid dashboard-entry dashboard-entry--third">
+      <section className="zoo-overview-grid">
         <div className="network-panel">
           <div className="section-heading"><div><h2>Grok command map</h2></div><Link href="/nodes">Inspect node ↗</Link></div>
           <div className="network-stage network-stage--orchestrated">
