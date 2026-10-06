@@ -1,0 +1,26 @@
+import { z } from "zod";
+
+import { sendSignal } from "@/lib/zoo-store";
+
+const signalSchema = z.object({
+  agentId: z.string().trim().min(1).max(100),
+  targetAgentId: z.string().trim().min(1).max(100),
+  summary: z.string().trim().min(3).max(500),
+});
+
+export async function POST(request: Request) {
+  const parsed = signalSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) {
+    return Response.json({ error: "Signal input is invalid", details: parsed.error.flatten() }, { status: 400 });
+  }
+
+  try {
+    const event = await sendSignal(parsed.data);
+    return Response.json({ event }, { status: 201 });
+  } catch (error) {
+    const code = error instanceof Error ? error.message : "UNKNOWN";
+    if (code === "AGENT_NOT_FOUND") return Response.json({ error: "Source or target animal not found" }, { status: 404 });
+    if (code === "SAME_AGENT") return Response.json({ error: "Choose two different animals" }, { status: 400 });
+    return Response.json({ error: "The signal could not be published" }, { status: 500 });
+  }
+}

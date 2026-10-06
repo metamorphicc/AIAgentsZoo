@@ -1,9 +1,9 @@
 "use client";
 
-import { ContactShadows, Grid, Html, OrbitControls, useAnimations, useGLTF } from "@react-three/drei";
+import { ContactShadows, Grid, Html, OrbitControls, useAnimations, useGLTF, useProgress } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
-import { Suspense, useEffect, useState } from "react";
-import { LoopRepeat } from "three";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { LoopOnce, LoopRepeat } from "three";
 
 import type { SpeciesId } from "@/lib/zoo/types";
 
@@ -46,50 +46,134 @@ const animalProfiles = {
   },
 } satisfies Record<SpeciesId, AnimalProfile>;
 
-function AnimalModel({ animation, profile }: { animation: string; profile: AnimalProfile }) {
+type Playback = {
+  animation: string;
+  requestId: number;
+};
+
+function AnimalModel({
+  onFinished,
+  playback,
+  profile,
+  reducedMotion,
+}: {
+  onFinished: () => void;
+  playback: Playback;
+  profile: AnimalProfile;
+  reducedMotion: boolean;
+}) {
   const { animations, scene } = useGLTF(profile.modelPath);
-  const { actions } = useAnimations(animations, scene);
+  const model = useMemo(() => scene.clone(true), [scene]);
+  const { actions } = useAnimations(animations, model);
 
   useEffect(() => {
-    const nextAction = actions[animation];
-    Object.values(actions).forEach((action) => action?.fadeOut(0.2));
-    nextAction?.reset().setLoop(LoopRepeat, Infinity).fadeIn(0.25).play();
+    Object.values(actions).forEach((action) => action?.fadeOut(0.18));
+
+    if (reducedMotion) {
+      Object.values(actions).forEach((action) => action?.stop());
+      return;
+    }
+
+    const nextAction = actions[playback.animation] ?? actions.Idle;
+    if (!nextAction) return;
+
+    const isIdle = playback.animation === "Idle";
+    nextAction
+      .reset()
+      .setLoop(isIdle ? LoopRepeat : LoopOnce, isIdle ? Infinity : 1)
+      .fadeIn(0.22)
+      .play();
+
+    const finishTimer = isIdle
+      ? undefined
+      : window.setTimeout(onFinished, Math.max(480, nextAction.getClip().duration * 1000 + 120));
 
     return () => {
-      nextAction?.fadeOut(0.2);
+      if (finishTimer) window.clearTimeout(finishTimer);
+      nextAction.fadeOut(0.18);
     };
-  }, [actions, animation]);
+  }, [actions, onFinished, playback, reducedMotion]);
 
-  return <primitive object={scene} position={[0, 0, 0]} scale={profile.scale} />;
+  return <primitive object={model} position={[0, 0, 0]} scale={profile.scale} />;
 }
 
-function ModelLoadingState() {
+function ModelLoadingState({ name }: { name: string }) {
+  const { progress } = useProgress();
+  const value = Math.round(progress);
+
   return (
     <Html center>
-      <span className="owl-lab-loading">LOADING SPECIMEN</span>
+      <div className="animal-model-loading" role="status" aria-live="polite">
+        <span>ASSEMBLING SPECIMEN</span>
+        <strong>{name.toUpperCase()}</strong>
+        <progress aria-label={`Loading 3D model of ${name}`} max="100" value={value}>{value}%</progress>
+        <small>{value}% / MODEL DATA</small>
+      </div>
     </Html>
   );
 }
 
 export function Animal3DViewport({ name, role, species }: { name: string; role: string; species: SpeciesId }) {
   const profile = animalProfiles[species];
-  const [selection, setSelection] = useState<{ animation: string; species: SpeciesId }>({ animation: "Idle", species });
-  const animation = selection.species === species ? selection.animation : "Idle";
+  const [playback, setPlayback] = useState<Playback>({ animation: "Idle", requestId: 0 });
+  const [reducedMotion, setReducedMotion] = useState(false);
+  const behaviorTimer = useRef<number | undefined>(undefined);
+
+  const clearBehaviorTimer = useCallback(() => {
+    if (behaviorTimer.current) window.clearTimeout(behaviorTimer.current);
+    behaviorTimer.current = undefined;
+  }, []);
+
+  const playBehavior = useCallback((animation: string) => {
+    clearBehaviorTimer();
+    setPlayback((current) => ({ animation, requestId: current.requestId + 1 }));
+  }, [clearBehaviorTimer]);
+
+  const scheduleBehavior = useCallback(() => {
+    clearBehaviorTimer();
+    if (reducedMotion) return;
+
+    const behaviors = profile.actions.filter((action) => action !== "Idle");
+    const wait = 2200 + Math.random() * 3600;
+    behaviorTimer.current = window.setTimeout(() => {
+      const next = behaviors[Math.floor(Math.random() * behaviors.length)] ?? "Idle";
+      setPlayback((current) => ({ animation: next, requestId: current.requestId + 1 }));
+    }, wait);
+  }, [clearBehaviorTimer, profile.actions, reducedMotion]);
+
+  const returnToIdle = useCallback(() => {
+    setPlayback((current) => ({ animation: "Idle", requestId: current.requestId + 1 }));
+    scheduleBehavior();
+  }, [scheduleBehavior]);
+
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const syncPreference = () => setReducedMotion(media.matches);
+    syncPreference();
+    media.addEventListener("change", syncPreference);
+    return () => media.removeEventListener("change", syncPreference);
+  }, []);
+
+  useEffect(() => {
+    scheduleBehavior();
+    return clearBehaviorTimer;
+  }, [clearBehaviorTimer, scheduleBehavior, species]);
 
   return (
     <section className="animal-model-shell" aria-label={`Interactive 3D model of ${name}`}>
       <div className="animal-model-toolbar">
         <div>
-          <span className="animal-model-live"><i aria-hidden="true" />LIVE SPECIMEN</span>
+          <span className="animal-model-live"><i aria-hidden="true" />AUTONOMOUS SPECIMEN</span>
           <strong>{name.toUpperCase()} / {role.toUpperCase()}</strong>
         </div>
-        <span>RIGGED · 4 BEHAVIOR CLIPS</span>
+        <span>{reducedMotion ? "MOTION REDUCED" : "LIVE · RANDOM BEHAVIOR"}</span>
       </div>
 
       <div className="animal-model-viewer">
         <Canvas
           camera={{ position: profile.camera, fov: 35 }}
           dpr={[1, 1.8]}
+          frameloop="always"
           gl={{ alpha: false, antialias: true }}
           shadows
         >
@@ -98,8 +182,8 @@ export function Animal3DViewport({ name, role, species }: { name: string; role: 
           <ambientLight intensity={1.4} />
           <directionalLight castShadow color="#b8ff32" intensity={3.2} position={[4, 7, 5]} />
           <directionalLight color="#ff6122" intensity={2.4} position={[-5, 3, -2]} />
-          <Suspense fallback={<ModelLoadingState />}>
-            <AnimalModel animation={animation} profile={profile} />
+          <Suspense fallback={<ModelLoadingState name={name} />}>
+            <AnimalModel onFinished={returnToIdle} playback={playback} profile={profile} reducedMotion={reducedMotion} />
             <ContactShadows opacity={0.62} position={[0, -0.04, 0]} scale={8} blur={2.8} far={6} />
           </Suspense>
           <Grid
@@ -130,14 +214,17 @@ export function Animal3DViewport({ name, role, species }: { name: string; role: 
       <div className="animal-model-controls" aria-label="Animation controls">
         <div>
           <span>BEHAVIOR CLIP</span>
-          <strong>{animation}</strong>
+          <strong>{playback.animation}</strong>
         </div>
         <div className="animal-model-actions">
           {profile.actions.map((name) => (
             <button
-              aria-pressed={animation === name}
+              aria-pressed={playback.animation === name}
               key={name}
-              onClick={() => setSelection({ animation: name, species })}
+              onClick={() => {
+                playBehavior(name);
+                if (name === "Idle") scheduleBehavior();
+              }}
               type="button"
             >
               {name}
@@ -148,5 +235,3 @@ export function Animal3DViewport({ name, role, species }: { name: string; role: 
     </section>
   );
 }
-
-Object.values(animalProfiles).forEach((profile) => useGLTF.preload(profile.modelPath));

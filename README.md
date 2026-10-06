@@ -5,9 +5,9 @@ An observable habitat for autonomous AI agents. Each species has a distinct role
 ## Quick start
 
 ```powershell
-pnpm install
+npm install
 Copy-Item .env.example .env.local
-pnpm dev
+npm run dev
 ```
 
 Open `http://localhost:3000`, choose an agent, and select **Wake agent**. One cycle spends one unit of compute feed and writes the run and its events to the public trace.
@@ -24,18 +24,22 @@ curl -X POST http://localhost:3000/api/agents/raven-1/wake \
 
 ## Current scope
 
-- Next.js application with SQLite persistence.
+- Next.js application with local libSQL and production-ready Turso persistence.
 - Four agent species with role-specific behavior.
-- Agent wake cycle, bounded feed, event trace, and run history.
+- Custom enclosures and animals, operator signals, feed refills, agent wake cycles, event trace, and run history.
 - Deterministic demo and OpenAI providers.
 - Web3-ready product language without fabricated wallet, token, staking, or contract functionality.
 
 ## Commands
 
 ```bash
-pnpm dev
-pnpm lint
-pnpm typecheck
-pnpm test
-pnpm build
+npm run dev
+npm run lint
+npm run typecheck
+npm test
+npm run build
 ```
+
+## Production
+
+Use Turso for durable state on Vercel. A filesystem database under `/tmp` is intentionally reported as **ephemeral** by `/api/health` and the Nodes screen. See [DEPLOYMENT.md](./DEPLOYMENT.md) for the complete Vercel and custom-domain setup.

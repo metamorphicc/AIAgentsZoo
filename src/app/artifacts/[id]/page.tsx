@@ -3,16 +3,16 @@ import { notFound } from "next/navigation";
 
 import { PageHeading } from "@/components/product-ui";
 import { ZooShell } from "@/components/zoo-shell";
-import { getAgent, getArtifact } from "@/lib/db";
 import { formatDate } from "@/lib/format";
+import { getAgent, getArtifact } from "@/lib/zoo-store";
 
 export const dynamic = "force-dynamic";
 
 export default async function ArtifactPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const artifact = getArtifact(id);
+  const artifact = await getArtifact(id);
   if (!artifact) notFound();
-  const author = getAgent(artifact.agentId);
+  const author = await getAgent(artifact.agentId);
   return (
     <ZooShell active="artifacts">
       <PageHeading eyebrow={`Artifact / ${artifact.id}`} title={artifact.title.toUpperCase()} description={`Published ${formatDate(artifact.createdAt)} by ${author?.name ?? artifact.agentId}.`} actions={<Link className="action-button" href="/artifacts">BACK TO REGISTRY</Link>} />

@@ -5,13 +5,14 @@ import {
   failAgentRun,
   getAgent,
   getAgentEvents,
+  getAgents,
   getAgentRuns,
   getArtifacts,
   getRecentEvents,
   insertArtifact,
   insertEvent,
   startAgentRun,
-} from "@/lib/db";
+} from "@/lib/zoo-store";
 
 import { createDemoDecision } from "./providers/demo";
 import { createOpenAIDecision } from "./providers/openai";
@@ -27,7 +28,7 @@ export class AgentRunError extends Error {
 }
 
 export async function runAgentCycle(agentId: string, taskOverride?: string) {
-  const agent = getAgent(agentId);
+  const agent = await getAgent(agentId);
 
   if (!agent) throw new AgentRunError("NOT_FOUND", "Agent not found");
 
@@ -37,7 +38,7 @@ export async function runAgentCycle(agentId: string, taskOverride?: string) {
   const startedAt = new Date().toISOString();
 
   try {
-    startAgentRun({ agentId, runId, provider, task, createdAt: startedAt });
+    await startAgentRun({ agentId, runId, provider, task, createdAt: startedAt });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
 
@@ -57,18 +58,23 @@ export async function runAgentCycle(agentId: string, taskOverride?: string) {
   }
 
   try {
-    const recentEvents = getRecentEvents(10);
+    const recentEvents = await getRecentEvents(10);
     const decision =
       provider === "openai"
         ? await createOpenAIDecision({ agent, task, recentEvents })
         : createDemoDecision({ agent, task, recentEvents });
 
+    const enclosureAgents = (await getAgents()).filter((resident) => resident.enclosureId === agent.enclosureId);
     for (const event of decision.events) {
-      const targetAgentId = event.targetAgentId && getAgent(event.targetAgentId)
-        ? event.targetAgentId
-        : null;
+      const requestedTarget = event.targetAgentId ? await getAgent(event.targetAgentId) : null;
+      const localBuilder = enclosureAgents.find((resident) => resident.species === "beaver" && resident.id !== agent.id);
+      const targetAgentId = requestedTarget?.enclosureId === agent.enclosureId
+        ? requestedTarget.id
+        : event.targetAgentId && localBuilder
+          ? localBuilder.id
+          : null;
 
-      insertEvent({
+      await insertEvent({
         agentId,
         targetAgentId,
         type: event.type,
@@ -78,7 +84,7 @@ export async function runAgentCycle(agentId: string, taskOverride?: string) {
     }
 
     if (agent.species === "beaver") {
-      const lastArtifactAt = getArtifacts(20)
+      const lastArtifactAt = (await getArtifacts(20))
         .find((artifact) => artifact.agentId === agent.id)?.createdAt;
       const incomingSignals = recentEvents
         .filter((event) =>
@@ -88,7 +94,7 @@ export async function runAgentCycle(agentId: string, taskOverride?: string) {
         .slice(0, 3);
 
       if (incomingSignals.length > 0) {
-        const artifact = insertArtifact({
+        const artifact = await insertArtifact({
           agentId,
           title: "Habitat field note",
           body: incomingSignals
@@ -96,7 +102,7 @@ export async function runAgentCycle(agentId: string, taskOverride?: string) {
             .join("\n"),
         });
 
-        insertEvent({
+        await insertEvent({
           agentId,
           type: "artifact",
           summary: `Beaver published “${artifact.title}” from ${incomingSignals.length} incoming signal${incomingSignals.length === 1 ? "" : "s"}.`,
@@ -105,7 +111,7 @@ export async function runAgentCycle(agentId: string, taskOverride?: string) {
       }
     }
 
-    completeAgentRun({
+    await completeAgentRun({
       agentId,
       runId,
       summary: decision.summary,
@@ -113,15 +119,15 @@ export async function runAgentCycle(agentId: string, taskOverride?: string) {
     });
 
     return {
-      agent: getAgent(agentId),
-      run: getAgentRuns(agentId, 1)[0],
-      events: getAgentEvents(agentId, 10),
-      artifacts: getArtifacts(10).filter((artifact) => artifact.agentId === agentId),
+      agent: await getAgent(agentId),
+      run: (await getAgentRuns(agentId, 1))[0],
+      events: await getAgentEvents(agentId, 10),
+      artifacts: (await getArtifacts(10)).filter((artifact) => artifact.agentId === agentId),
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown runtime error";
 
-    failAgentRun({
+    await failAgentRun({
       agentId,
       runId,
       error: message,

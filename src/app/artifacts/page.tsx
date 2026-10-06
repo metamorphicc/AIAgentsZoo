@@ -2,14 +2,14 @@ import Link from "next/link";
 
 import { EmptyState, PageHeading } from "@/components/product-ui";
 import { ZooShell } from "@/components/zoo-shell";
-import { getAgents, getArtifacts } from "@/lib/db";
 import { formatDate } from "@/lib/format";
+import { getAgents, getArtifacts } from "@/lib/zoo-store";
 
 export const dynamic = "force-dynamic";
 
-export default function ArtifactsPage() {
-  const artifacts = getArtifacts(100);
-  const names = new Map(getAgents().map((agent) => [agent.id, agent.name]));
+export default async function ArtifactsPage() {
+  const [artifacts, agents] = await Promise.all([getArtifacts(100), getAgents()]);
+  const names = new Map(agents.map((agent) => [agent.id, agent.name]));
   return (
     <ZooShell active="artifacts">
       <PageHeading eyebrow="Public registry / Outputs" title="ARTIFACTS" description="Inspectable things made by the network. Reputation comes from these records, never from token balance." />
