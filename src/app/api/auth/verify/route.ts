@@ -4,6 +4,7 @@ import { requestFingerprint, forbiddenOriginResponse, isSameOrigin, requestOrigi
 import { checkRateLimit, rateLimitResponse } from "@/lib/auth/rate-limit";
 import { issueSession } from "@/lib/auth/session";
 import { verifyWalletChallenge } from "@/lib/auth/siwe";
+import { storageMode } from "@/lib/zoo-store";
 
 const verifySchema = z.object({
   address: z.string().trim().min(42).max(42),
@@ -12,6 +13,9 @@ const verifySchema = z.object({
 
 export async function POST(request: Request) {
   if (!isSameOrigin(request)) return forbiddenOriginResponse();
+  if (storageMode === "ephemeral") {
+    return Response.json({ error: "Wallet sign-in is unavailable until durable storage is configured for this deployment." }, { status: 503 });
+  }
   const rate = await checkRateLimit({
     key: requestFingerprint(request),
     scope: "auth-verify",

@@ -20,7 +20,7 @@ import type {
   ZooEvent,
 } from "@/lib/zoo/types";
 
-const remoteUrl = process.env.TURSO_DATABASE_URL;
+const remoteUrl = process.env.TURSO_DATABASE_URL?.trim() || undefined;
 export const storageMode = remoteUrl ? "turso" : process.env.VERCEL ? "ephemeral" : "local-libsql";
 const localPath = getDatabasePath({
   DATABASE_PATH: process.env.DATABASE_PATH,
@@ -858,8 +858,8 @@ export async function createAuthSession(input: {
   const createdAt = new Date().toISOString();
   await zooStore.batch([
     {
-      sql: "DELETE FROM auth_sessions WHERE address = ? OR expires_at <= ?",
-      args: [input.address, createdAt],
+      sql: "DELETE FROM auth_sessions WHERE expires_at <= ?",
+      args: [createdAt],
     },
     {
       sql: `INSERT INTO auth_sessions (token_hash, address, role, expires_at, created_at)

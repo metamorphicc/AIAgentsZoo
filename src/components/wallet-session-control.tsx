@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 
 import { InlineActivity } from "@/components/loading-states";
 import { shortAddress } from "@/lib/auth/config";
+import { shouldRevokeForAccountsChange } from "@/lib/auth/wallet-events";
 import type { AuthSession } from "@/lib/zoo/types";
 
 type EthereumProvider = {
@@ -30,8 +31,9 @@ export function WalletSessionControl({ session, compact = false }: {
   useEffect(() => {
     const provider = window.ethereum;
     if (!provider?.on) return;
-    const clearStaleSession = async () => {
-      if (session) await fetch("/api/auth/logout", { method: "POST" });
+    const clearStaleSession = async (accounts: unknown) => {
+      if (!shouldRevokeForAccountsChange(session?.address ?? null, accounts)) return;
+      await fetch("/api/auth/logout", { method: "POST" });
       router.refresh();
     };
     const refresh = () => router.refresh();
@@ -52,8 +54,15 @@ export function WalletSessionControl({ session, compact = false }: {
     }
 
     setState("requesting");
-    setMessage("Waiting for wallet access…");
+    setMessage("Checking habitat storage…");
     try {
+      const healthResponse = await fetch("/api/health", { cache: "no-store" });
+      const health = await healthResponse.json() as { durable?: boolean; error?: string };
+      if (!healthResponse.ok || !health.durable) {
+        throw new Error(health.error ?? "Wallet sign-in is temporarily unavailable: this deployment has no durable database. Configure TURSO_DATABASE_URL and TURSO_AUTH_TOKEN in Vercel, then redeploy.");
+      }
+
+      setMessage("Waiting for wallet access…");
       const accounts = await provider.request({ method: "eth_requestAccounts" }) as string[];
       const address = accounts[0];
       if (!address) throw new Error("The wallet did not return an account.");
