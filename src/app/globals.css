@@ -3711,8 +3711,11 @@ body {
 }
 
 .action-button:disabled {
+  border-color: var(--color-rule-2);
+  background: var(--color-paper-2);
+  color: var(--color-muted);
   cursor: not-allowed;
-  opacity: 0.55;
+  opacity: 1;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -3752,6 +3755,24 @@ body {
 
 .manage-actions .refill-control[data-state="error"] .action-button {
   border-color: var(--color-error);
+}
+
+.refill-control .action-button {
+  background: var(--color-ink);
+  color: #000;
+}
+
+.refill-control .action-button:disabled {
+  background: var(--color-ink-2);
+  color: #000;
+  opacity: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .refill-control .action-button:not(:disabled):hover {
+    background: var(--color-ink-2);
+    color: #000;
+  }
 }
 
 @media (min-width: 72.001rem) {

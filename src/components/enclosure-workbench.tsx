@@ -108,7 +108,7 @@ export function EnclosureWorkbench({ agents, controlAgents, enclosures, initialE
           <label><span>From</span><select name="agentId" required>{agents.map((agent) => <option key={agent.id} value={agent.id}>{agent.name}</option>)}</select></label>
           <label><span>To</span><select defaultValue={agents[1]?.id} name="targetAgentId" required>{agents.map((agent) => <option key={agent.id} value={agent.id}>{agent.name}</option>)}</select></label>
           <label><span>Request</span><input autoComplete="off" maxLength={500} minLength={3} name="summary" placeholder="Inspect this observation and build a field note." required /></label>
-          <button aria-busy={operation === "signal"} className="action-button" disabled={operation !== "idle" || agents.length < 2} type="submit">{operation === "signal" ? <InlineActivity label="PUBLISHING SIGNAL" /> : "PUBLISH SIGNAL"}</button>
+          <button aria-busy={operation === "signal"} className="action-button action-button--accent" disabled={operation !== "idle" || agents.length < 2} type="submit">{operation === "signal" ? <InlineActivity label="PUBLISHING SIGNAL" /> : "PUBLISH SIGNAL"}</button>
         </div>
       </form>
 
