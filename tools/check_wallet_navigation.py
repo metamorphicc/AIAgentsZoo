@@ -54,6 +54,7 @@ with sync_playwright() as playwright:
     page.goto(f"{base_url}/enclosures", wait_until="domcontentloaded")
     page.locator(".access-panel .wallet-connect").click()
     page.locator(".product-nav-actions .wallet-identity").wait_for(timeout=20000)
+    assert page.locator(".product-nav-actions .wallet-control > p").count() == 0, "Success banner remained visible"
 
     for href in ("/zoo", "/agents", "/enclosures", "/operators", "/manage"):
         selector = f'.product-nav-links a[href="{href}"]' if href != "/manage" else '.product-nav-actions a[href="/manage"]'

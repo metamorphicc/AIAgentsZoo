@@ -108,7 +108,7 @@ export function WalletSessionControl({ session, compact = false }: {
       }
 
       setState("connected");
-      setMessage(`Connected as ${shortAddress(confirmed.session.address)}.`);
+      setMessage("");
       router.refresh();
     } catch (error) {
       setState("error");
@@ -138,7 +138,7 @@ export function WalletSessionControl({ session, compact = false }: {
           <span>{shortAddress(session.address)}</span>
           <small>{session.role}</small>
         </button>
-        {message ? <p role="alert">{message}</p> : null}
+        {state === "error" && message ? <p role="alert">{message}</p> : null}
       </div>
     );
   }
