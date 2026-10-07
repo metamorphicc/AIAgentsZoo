@@ -3700,3 +3700,93 @@ body {
   .control-agent-card__head { grid-template-columns: auto minmax(0, 1fr); }
   .control-agent-card__head i { grid-column: 2; }
 }
+
+/* Hallmark · component: action buttons and management rows · genre: atmospheric · theme: midnight biome
+ * states: default · hover · focus · active · disabled · loading · error · success
+ * contrast: dark paper / light ink and lime / dark accent ink
+ */
+.action-button:not(.action-button--accent) {
+  background: var(--color-paper-2);
+  color: var(--color-ink);
+}
+
+.action-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .action-button:not(.action-button--accent):not(:disabled):hover {
+    background: var(--color-paper-3);
+  }
+
+  .manage-actions .pill-button:not(:disabled):hover {
+    border-color: var(--color-success);
+    background: var(--color-success);
+    color: var(--color-accent-ink);
+  }
+}
+
+.manage-actions {
+  width: 100%;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.manage-actions .wake-control,
+.manage-actions .refill-control {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+.manage-row .manage-actions .pill-button,
+.manage-actions .action-button {
+  width: 100%;
+  min-height: 3rem;
+}
+
+.manage-actions .wake-control[data-state="loading"] .pill-button,
+.manage-actions .refill-control[data-state="loading"] .action-button {
+  cursor: progress;
+}
+
+.manage-actions .refill-control[data-state="error"] .action-button {
+  border-color: var(--color-error);
+}
+
+@media (min-width: 72.001rem) {
+  .manage-row {
+    grid-template-columns: minmax(14rem, 1fr) 8rem 11rem 12rem;
+  }
+}
+
+@media (min-width: 30.001rem) and (max-width: 72rem) {
+  .manage-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .manage-row .manage-actions .wake-control {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 48rem) {
+  .manage-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .manage-agent,
+  .manage-agent > span:last-child {
+    min-width: 0;
+  }
+
+  .manage-agent small {
+    overflow-wrap: anywhere;
+  }
+
+  .manage-row > .status-label,
+  .manage-row > .budget-meter,
+  .manage-row > .manage-actions {
+    grid-column: 1;
+  }
+}
