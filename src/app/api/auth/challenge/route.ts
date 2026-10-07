@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createWalletChallenge } from "@/lib/auth/siwe";
 import { forbiddenOriginResponse, isSameOrigin, requestFingerprint, requestOrigin } from "@/lib/auth/request";
 import { checkRateLimit, rateLimitResponse } from "@/lib/auth/rate-limit";
+import { storageMode } from "@/lib/zoo-store";
 
 const challengeSchema = z.object({
   address: z.string().trim().min(42).max(42),
@@ -11,6 +12,9 @@ const challengeSchema = z.object({
 
 export async function POST(request: Request) {
   if (!isSameOrigin(request)) return forbiddenOriginResponse();
+  if (storageMode === "ephemeral") {
+    return Response.json({ error: "Wallet sign-in is unavailable until durable storage is configured for this deployment." }, { status: 503 });
+  }
   const rate = await checkRateLimit({
     key: requestFingerprint(request),
     scope: "auth-challenge",
