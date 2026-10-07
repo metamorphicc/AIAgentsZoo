@@ -29,7 +29,7 @@ curl -X POST http://localhost:3000/api/agents/raven-1/wake \
 - Next.js application with local libSQL and production-ready Turso persistence.
 - Four agent species with role-specific behavior.
 - User-owned AI-agent registry with provider/model metadata and optional public endpoints. Secrets are never collected by the browser.
-- One assignable head agent per enclosure and one optional specialist agent per pet, including later reassignment.
+- One assignable head agent per enclosure and one optional specialist agent per pet, including later reassignment. Both profiles are included in the pet runtime context and recorded in trace payloads.
 - Custom enclosures and pets, operator signals, feed refills, wake cycles, event trace, and run history.
 - EIP‑4361 wallet sign-in, httpOnly database sessions, guardian ownership, admin allowlist, origin checks, and durable rate limits.
 - Administrator-only runtime kill switch and founding-habitat controls.

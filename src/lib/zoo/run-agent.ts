@@ -4,10 +4,12 @@ import {
   completeAgentRun,
   failAgentRun,
   getAgent,
+  getControlAgent,
   getAgentEvents,
   getAgents,
   getAgentRuns,
   getArtifacts,
+  getEnclosure,
   getRecentEvents,
   getRuntimeControl,
   insertArtifact,
@@ -63,13 +65,18 @@ export async function runAgentCycle(agentId: string, taskOverride?: string) {
   }
 
   try {
-    const recentEvents = await getRecentEvents(10);
+    const [recentEvents, enclosure, enclosureAgents, controlAgent] = await Promise.all([
+      getRecentEvents(10),
+      getEnclosure(agent.enclosureId),
+      getAgents().then((residents) => residents.filter((resident) => resident.enclosureId === agent.enclosureId)),
+      agent.controlAgentId ? getControlAgent(agent.controlAgentId) : null,
+    ]);
+    const headAgent = enclosure?.headAgentId ? await getControlAgent(enclosure.headAgentId) : null;
     const decision =
       provider === "openai"
-        ? await createOpenAIDecision({ agent, task, recentEvents })
-        : createDemoDecision({ agent, task, recentEvents });
+        ? await createOpenAIDecision({ agent, task, recentEvents, controlAgent, headAgent, enclosureAgents })
+        : createDemoDecision({ agent, task, recentEvents, controlAgent, headAgent });
 
-    const enclosureAgents = (await getAgents()).filter((resident) => resident.enclosureId === agent.enclosureId);
     for (const event of decision.events) {
       const requestedTarget = event.targetAgentId ? await getAgent(event.targetAgentId) : null;
       const localBuilder = enclosureAgents.find((resident) => resident.species === "beaver" && resident.id !== agent.id);
@@ -84,7 +91,12 @@ export async function runAgentCycle(agentId: string, taskOverride?: string) {
         targetAgentId,
         type: event.type,
         summary: event.summary,
-        payload: { details: event.details, runId },
+        payload: {
+          details: event.details,
+          runId,
+          controlAgentId: controlAgent?.id ?? null,
+          headAgentId: headAgent?.id ?? null,
+        },
       });
     }
 

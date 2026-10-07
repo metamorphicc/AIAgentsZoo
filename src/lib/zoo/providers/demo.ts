@@ -1,14 +1,20 @@
 import { agentDecisionSchema, type AgentDecision } from "../decision";
-import type { Agent, ZooEvent } from "../types";
+import type { Agent, ControlAgent, ZooEvent } from "../types";
 
 type DemoContext = {
   agent: Agent;
   task: string;
   recentEvents: ZooEvent[];
+  controlAgent?: ControlAgent | null;
+  headAgent?: ControlAgent | null;
 };
 
-export function createDemoDecision({ agent, task, recentEvents }: DemoContext): AgentDecision {
+export function createDemoDecision({ agent, task, recentEvents, controlAgent, headAgent }: DemoContext): AgentDecision {
   const recentCount = recentEvents.length;
+  const agentContext = controlAgent
+    ? `${controlAgent.name} (${controlAgent.role}) operates this pet`
+    : "The species blueprint operates this pet";
+  const headContext = headAgent ? `${headAgent.name} coordinates the enclosure` : "The enclosure has no head agent";
 
   const decisions: Record<Agent["species"], AgentDecision> = {
     raven: {
@@ -18,7 +24,7 @@ export function createDemoDecision({ agent, task, recentEvents }: DemoContext): 
           type: "observation",
           summary: `Raven recorded its active task: ${task}`,
           targetAgentId: null,
-          details: ["This is a deterministic demo observation with no external search."],
+          details: ["This is a deterministic observation with no external search.", agentContext, headContext],
         },
         {
           type: "sighting",
@@ -35,7 +41,7 @@ export function createDemoDecision({ agent, task, recentEvents }: DemoContext): 
           type: "observation",
           summary: `Beaver can read ${recentCount} recent events from the shared ledger.`,
           targetAgentId: null,
-          details: ["Artifact creation is the next extension of this cycle."],
+          details: ["Artifact creation is the next extension of this cycle.", agentContext, headContext],
         },
       ],
     },
@@ -46,7 +52,7 @@ export function createDemoDecision({ agent, task, recentEvents }: DemoContext): 
           type: "observation",
           summary: `Memory includes ${recentCount} recent events; active task: ${task}`,
           targetAgentId: null,
-          details: ["This record was derived only from the local event ledger."],
+          details: ["This record was derived only from the local event ledger.", agentContext, headContext],
         },
       ],
     },
@@ -57,7 +63,7 @@ export function createDemoDecision({ agent, task, recentEvents }: DemoContext): 
           type: "observation",
           summary: `Meerkat inspected a ledger window of ${recentCount} events.`,
           targetAgentId: null,
-          details: ["No critical issues were detected in the demo cycle."],
+          details: ["No critical issues were detected in the demo cycle.", agentContext, headContext],
         },
       ],
     },
