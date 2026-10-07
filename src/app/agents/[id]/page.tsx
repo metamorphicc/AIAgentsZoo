@@ -11,7 +11,7 @@ import { formatDate, formatEventType, formatStatus } from "@/lib/format";
 import { shortAddress } from "@/lib/auth/config";
 import { canManageResource } from "@/lib/auth/authorization";
 import { getSession } from "@/lib/auth/session";
-import { getAgent, getAgentEvents, getAgentRuns, getEnclosure } from "@/lib/zoo-store";
+import { getAgent, getAgentEvents, getAgentRuns, getControlAgent, getEnclosure } from "@/lib/zoo-store";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +19,7 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
   const { id } = await params;
   const agent = await getAgent(id);
   if (!agent) notFound();
-  const [events, runs, enclosure, session] = await Promise.all([getAgentEvents(agent.id), getAgentRuns(agent.id), getEnclosure(agent.enclosureId), getSession()]);
+  const [events, runs, enclosure, controlAgent, session] = await Promise.all([getAgentEvents(agent.id), getAgentRuns(agent.id), getEnclosure(agent.enclosureId), agent.controlAgentId ? getControlAgent(agent.controlAgentId) : null, getSession()]);
   const canManage = canManageResource(session, agent.ownerAddress);
 
   return (
@@ -63,7 +63,7 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
       <section className="agent-detail-grid">
         <div className="task-panel animal-facts-panel">
           <div className="section-heading"><h2>Passport</h2><span>{agent.id}</span></div>
-          <dl><div><dt>Guardian</dt><dd>{agent.ownerAddress ? shortAddress(agent.ownerAddress) : "Zoo system"}</dd></div><div><dt>Territory</dt><dd>{enclosure ? <Link href={`/enclosures/${enclosure.id}`}>{enclosure.name} ↗</Link> : agent.enclosureId}</dd></div><div><dt>Schedule</dt><dd>Autonomous visual behavior · explicit runtime cycles</dd></div><div><dt>Access</dt><dd>Public read · guardian-signed control</dd></div></dl>
+          <dl><div><dt>Guardian</dt><dd>{agent.ownerAddress ? shortAddress(agent.ownerAddress) : "Zoo system"}</dd></div><div><dt>Territory</dt><dd>{enclosure ? <Link href={`/enclosures/${enclosure.id}`}>{enclosure.name} ↗</Link> : agent.enclosureId}</dd></div><div><dt>Pet agent</dt><dd>{controlAgent ? `${controlAgent.name} · ${controlAgent.model}` : "Species blueprint only"}</dd></div><div><dt>Access</dt><dd>Public read · guardian-signed control</dd></div></dl>
         </div>
         <div className="cycle-panel">
           <div className="section-heading"><h2>Cycle history</h2><span>{runs.length} runs</span></div>

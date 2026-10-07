@@ -5,13 +5,14 @@ import { ZooShell } from "@/components/zoo-shell";
 import { formatDate, formatEventType, formatStatus } from "@/lib/format";
 import { shortAddress } from "@/lib/auth/config";
 import { getSession } from "@/lib/auth/session";
-import { getAgents, getArtifacts, getEnclosures, getRecentEvents, getRuntimeControl } from "@/lib/zoo-store";
+import { getAgents, getArtifacts, getControlAgents, getEnclosures, getRecentEvents, getRuntimeControl } from "@/lib/zoo-store";
 
 export const dynamic = "force-dynamic";
 
 export default async function ZooPage() {
-  const [agents, events, artifacts, enclosures, session, runtime] = await Promise.all([
+  const [agents, controlAgents, events, artifacts, enclosures, session, runtime] = await Promise.all([
     getAgents(),
+    getControlAgents(),
     getRecentEvents(8),
     getArtifacts(3),
     getEnclosures(),
@@ -25,8 +26,13 @@ export default async function ZooPage() {
   const workingAgents = agents.filter((agent) => agent.status === "working").length;
   const sleepingAgents = agents.filter((agent) => agent.status === "sleeping").length;
   const lastEvent = events[0];
-  const foundingIds = ["raven-1", "beaver-1", "owl-1", "meerkat-1"];
-  const networkAgents = foundingIds.flatMap((id) => agents.find((agent) => agent.id === id) ?? []);
+  const ownedHeadedEnclosure = session
+    ? enclosures.find((enclosure) => enclosure.ownerAddress?.toLowerCase() === session.address.toLowerCase() && enclosure.headAgentId)
+    : null;
+  const activeEnclosure = ownedHeadedEnclosure ?? enclosures.find((enclosure) => enclosure.id === "habitat-01") ?? enclosures[0];
+  const orchestrator = controlAgents.find((agent) => agent.id === activeEnclosure?.headAgentId) ?? controlAgents.find((agent) => agent.id === "grok-orchestrator");
+  const networkAgents = activeEnclosure ? agents.filter((agent) => agent.enclosureId === activeEnclosure.id).slice(0, 4) : [];
+  const orchestratorName = orchestrator?.name ?? "Unassigned";
 
   return (
     <ZooShell active="zoo">
@@ -39,10 +45,10 @@ export default async function ZooPage() {
             </div>
 
             <div className="operator-identity">
-              <span className="operator-identity__mark" aria-hidden="true">G</span>
+              <span className="operator-identity__mark" aria-hidden="true">{orchestratorName.slice(0, 1).toUpperCase()}</span>
               <div>
-                <h1>Grok</h1>
-                <span>Head orchestrator · Visual command layer</span>
+                <h1>{orchestratorName}</h1>
+                <span>{orchestrator ? `${orchestrator.role} · ${orchestrator.provider}` : "No head agent assigned"}</span>
               </div>
             </div>
 
@@ -79,7 +85,7 @@ export default async function ZooPage() {
                 <Link href="/artifacts"><span>03</span><div><strong>Inspect the result</strong><small>Open Beaver&apos;s output when it is published.</small></div><i aria-hidden="true">↗</i></Link>
               </li>
             </ol>
-            <p>Grok&apos;s command layer is visual in this build. <Link href={session ? "/enclosures" : "/manage"}>{session ? "Create your own enclosure" : "Connect a guardian wallet"} ↗</Link></p>
+            <p>{orchestratorName} is registered as the active enclosure head. <Link href={session ? "/enclosures" : "/manage"}>{session ? "Create or assign your own agent" : "Connect a guardian wallet"} ↗</Link></p>
           </aside>
         </header>
 
@@ -104,17 +110,17 @@ export default async function ZooPage() {
 
       <section className="zoo-overview-grid">
         <div className="network-panel">
-          <div className="section-heading"><div><h2>Grok command map</h2></div><Link href="/nodes">Inspect node ↗</Link></div>
+          <div className="section-heading"><div><h2>{orchestratorName} command map</h2></div><Link href={activeEnclosure ? `/enclosures/${activeEnclosure.id}` : "/enclosures"}>Open enclosure ↗</Link></div>
           <div className="network-stage network-stage--orchestrated">
             <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
               <path className="orchestrator-stem" d="M50 12 L50 57" />
               <path d="M18 34 L50 57 L82 34" /><path d="M18 83 L50 57 L82 83" />
               <path className={liveSignal ? "signal-path" : undefined} d="M18 34 C38 22 62 22 82 34" />
             </svg>
-            <div className="network-orchestrator" aria-label="Grok, head orchestrator; visual preview only">
-              <span aria-hidden="true">G</span>
-              <span><small>HEAD ORCHESTRATOR</small><b>GROK</b></span>
-              <i>VISUAL PREVIEW</i>
+            <div className="network-orchestrator" aria-label={`${orchestratorName}, head agent`}>
+              <span aria-hidden="true">{orchestratorName.slice(0, 1).toUpperCase()}</span>
+              <span><small>HEAD AGENT</small><b>{orchestratorName.toUpperCase()}</b></span>
+              <i>{orchestrator?.provider.toUpperCase() ?? "UNASSIGNED"}</i>
             </div>
             <div className="network-core"><span aria-hidden="true" /><b>EVENT LEDGER</b><small>{liveSignal ? `${agentNames.get(liveSignal.agentId)} → ${agentNames.get(liveSignal.targetAgentId ?? "")}` : "Waiting for a routed signal"}</small></div>
             {networkAgents.map((agent) => (

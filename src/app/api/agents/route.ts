@@ -12,6 +12,7 @@ const createAgentSchema = z.object({
   task: z.string().trim().max(1000).optional(),
   feedMax: z.coerce.number().int().min(1).max(100).default(10),
   enclosureId: z.string().trim().min(1).max(100),
+  controlAgentId: z.string().trim().max(100).optional(),
 });
 
 export async function GET() {
@@ -29,6 +30,7 @@ export async function POST(request: Request) {
   try {
     const agent = await createAgent({
       ...parsed.data,
+      controlAgentId: parsed.data.controlAgentId || null,
       ownerAddress: auth.session.address,
       allowSystemEnclosure: auth.session.role === "admin",
     });
@@ -39,6 +41,12 @@ export async function POST(request: Request) {
     }
     if (error instanceof Error && error.message === "ENCLOSURE_FORBIDDEN") {
       return Response.json({ error: "This wallet does not own that enclosure" }, { status: 403 });
+    }
+    if (error instanceof Error && error.message === "CONTROL_AGENT_NOT_FOUND") {
+      return Response.json({ error: "AI agent not found" }, { status: 404 });
+    }
+    if (error instanceof Error && error.message === "CONTROL_AGENT_FORBIDDEN") {
+      return Response.json({ error: "This wallet does not own that AI agent" }, { status: 403 });
     }
     return Response.json({ error: "The animal could not be created" }, { status: 500 });
   }

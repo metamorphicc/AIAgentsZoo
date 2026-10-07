@@ -71,6 +71,7 @@ vercel domains inspect aiagentzoo.com
 - `/api/health` reports Turso and durable state.
 - Public visitors can browse `/zoo`, `/animals`, `/trace`, and `/artifacts` without mutation controls.
 - Connect a non-admin wallet, sign the EIP‑4361 message, create an enclosure and animal, reload, and confirm both persist.
+- Register an AI agent, appoint it as an enclosure head, assign it to a pet, reload, and confirm the hierarchy persists.
 - Confirm the guardian cannot wake, refill, or signal with another wallet’s animals.
 - Connect an address listed in `ADMIN_WALLETS` and verify the runtime pause/resume control on `/manage`.
 - Wake one animal and confirm feed decreases by one and the Trace gets new records.

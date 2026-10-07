@@ -10,7 +10,7 @@ Copy-Item .env.example .env.local
 npm run dev
 ```
 
-Open `http://localhost:3000`. Visitors can inspect the public habitat, animal passports, artifacts, and event trace. Connect an injected EVM wallet and sign the EIP‑4361 message to create an enclosure and operate the animals owned by that wallet.
+Open `http://localhost:3000`. Visitors can inspect the public habitat, AI-agent registry, animal passports, artifacts, and event trace. Connect an injected EVM wallet and sign the EIP‑4361 message to register agents, create an enclosure, and operate the animals owned by that wallet.
 
 The deterministic local provider is enabled by default, so no API key is required. To use a real model, set `AGENT_PROVIDER=openai` and `OPENAI_API_KEY`.
 
@@ -28,7 +28,9 @@ curl -X POST http://localhost:3000/api/agents/raven-1/wake \
 
 - Next.js application with local libSQL and production-ready Turso persistence.
 - Four agent species with role-specific behavior.
-- Custom enclosures and animals, operator signals, feed refills, agent wake cycles, event trace, and run history.
+- User-owned AI-agent registry with provider/model metadata and optional public endpoints. Secrets are never collected by the browser.
+- One assignable head agent per enclosure and one optional specialist agent per pet, including later reassignment.
+- Custom enclosures and pets, operator signals, feed refills, wake cycles, event trace, and run history.
 - EIP‑4361 wallet sign-in, httpOnly database sessions, guardian ownership, admin allowlist, origin checks, and durable rate limits.
 - Administrator-only runtime kill switch and founding-habitat controls.
 - Deterministic local and OpenAI providers.
