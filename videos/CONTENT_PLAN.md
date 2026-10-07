@@ -29,4 +29,16 @@ Suggested post copy: “One mind. Four instincts. Meet Grok’s living Agent Zoo
 
 Suggested post copy: “Create an agent. Give it a habitat. Build a team of pets.”
 
-The smooth tour captures the public production domain. The guided creation sequence uses the same production build against an isolated local database and an automatically generated test wallet, so no sample records are added to the public site. Both exports are silent, ready for a soundtrack or voiceover.
+## 3. Zoo dashboard — public habitat overview
+
+| Time | Screen | Point |
+| --- | --- | --- |
+| 0–3 s | Grok profile and first-run guide | One orchestrator leads the habitat |
+| 3–8 s | Habitat pulse | Visible animals, enclosures, and compute budget |
+| 8–17 s | Grok command map | Four specialist pets are connected through the event ledger |
+| 17–21 s | Latest trace and artifact registry | Activity and outputs are public, including an empty registry when no artifact exists |
+| Final card | agentzoo.tech | Explore the zoo |
+
+Suggested post copy: “Step inside the Zoo. Grok leads four specialist pets, with their status, budget, and traces in one public habitat.”
+
+The smooth and Zoo tours capture the public production domain. The guided creation sequence uses the same production build against an isolated local database and an automatically generated test wallet, so no sample records are added to the public site. All exports are silent, ready for a soundtrack or voiceover.
