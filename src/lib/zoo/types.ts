@@ -4,6 +4,9 @@ export type SpeciesId = (typeof speciesIds)[number];
 export const agentStatuses = ["sleeping", "working", "paused", "error"] as const;
 export type AgentStatus = (typeof agentStatuses)[number];
 
+export const controlAgentProviders = ["grok", "openai", "anthropic", "custom"] as const;
+export type ControlAgentProvider = (typeof controlAgentProviders)[number];
+
 export const eventTypes = [
   "woke_up",
   "observation",
@@ -27,9 +30,22 @@ export type Agent = {
   feed: number;
   feedMax: number;
   enclosureId: string;
+  controlAgentId: string | null;
   ownerAddress: string | null;
   task: string;
   lastAwakeAt: string | null;
+  createdAt: string;
+};
+
+export type ControlAgent = {
+  id: string;
+  name: string;
+  provider: ControlAgentProvider;
+  model: string;
+  role: string;
+  description: string;
+  endpointUrl: string | null;
+  ownerAddress: string | null;
   createdAt: string;
 };
 
@@ -38,6 +54,7 @@ export type Enclosure = {
   name: string;
   description: string;
   territory: string;
+  headAgentId: string | null;
   ownerAddress: string | null;
   agentCount: number;
   feed: number;

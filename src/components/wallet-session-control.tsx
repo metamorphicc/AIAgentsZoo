@@ -24,7 +24,7 @@ export function WalletSessionControl({ session, compact = false }: {
   compact?: boolean;
 }) {
   const router = useRouter();
-  const [state, setState] = useState<"idle" | "connecting" | "error">("idle");
+  const [state, setState] = useState<"idle" | "requesting" | "signing" | "verifying" | "connected" | "error">("idle");
   const [message, setMessage] = useState("");
 
   useEffect(() => {
@@ -51,8 +51,8 @@ export function WalletSessionControl({ session, compact = false }: {
       return;
     }
 
-    setState("connecting");
-    setMessage("Open your wallet and approve the sign-in message. No transaction will be sent.");
+    setState("requesting");
+    setMessage("Waiting for wallet access…");
     try {
       const accounts = await provider.request({ method: "eth_requestAccounts" }) as string[];
       const address = accounts[0];
@@ -60,8 +60,11 @@ export function WalletSessionControl({ session, compact = false }: {
       const chainHex = await provider.request({ method: "eth_chainId" }) as string;
       const chainId = Number.parseInt(chainHex, 16);
 
+      setState("signing");
+      setMessage("Approve the sign-in message in your wallet. No transaction or gas is required.");
       const challengeResponse = await fetch("/api/auth/challenge", {
         method: "POST",
+        credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ address, chainId }),
       });
@@ -74,16 +77,29 @@ export function WalletSessionControl({ session, compact = false }: {
         method: "personal_sign",
         params: [challenge.message, address],
       }) as string;
+      setState("verifying");
+      setMessage("Verifying the signature and opening your guardian session…");
       const verifyResponse = await fetch("/api/auth/verify", {
         method: "POST",
+        credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ address, signature }),
       });
-      const verified = await verifyResponse.json() as { error?: string };
+      const verified = await verifyResponse.json() as { error?: string; session?: AuthSession };
       if (!verifyResponse.ok) throw new Error(verified.error ?? "The wallet signature was rejected.");
 
-      setState("idle");
-      setMessage("");
+      const sessionResponse = await fetch("/api/auth/session", {
+        cache: "no-store",
+        credentials: "same-origin",
+        headers: { "Cache-Control": "no-cache" },
+      });
+      const confirmed = await sessionResponse.json() as { session?: AuthSession | null };
+      if (!sessionResponse.ok || !confirmed.session || confirmed.session.address.toLowerCase() !== address.toLowerCase()) {
+        throw new Error("The signature was accepted, but the session was not persisted. Check the production database connection and try again.");
+      }
+
+      setState("connected");
+      setMessage(`Connected as ${shortAddress(confirmed.session.address)}.`);
       router.refresh();
     } catch (error) {
       setState("error");
@@ -92,7 +108,7 @@ export function WalletSessionControl({ session, compact = false }: {
   }
 
   async function disconnect() {
-    setState("connecting");
+    setState("verifying");
     try {
       const response = await fetch("/api/auth/logout", { method: "POST" });
       if (!response.ok) throw new Error("The local session could not be closed.");
@@ -108,7 +124,7 @@ export function WalletSessionControl({ session, compact = false }: {
   if (session) {
     return (
       <div className={`wallet-control${compact ? " wallet-control--compact" : ""}`} data-state={state}>
-        <button className="wallet-identity" disabled={state === "connecting"} onClick={disconnect} type="button" title="Disconnect wallet session">
+        <button className="wallet-identity" disabled={state === "verifying"} onClick={disconnect} type="button" title="Disconnect wallet session">
           <i aria-hidden="true" />
           <span>{shortAddress(session.address)}</span>
           <small>{session.role}</small>
@@ -120,8 +136,8 @@ export function WalletSessionControl({ session, compact = false }: {
 
   return (
     <div className={`wallet-control${compact ? " wallet-control--compact" : ""}`} data-state={state}>
-      <button className="wallet-connect" disabled={state === "connecting"} onClick={connect} type="button">
-        {state === "connecting" ? <InlineActivity label="SIGNING IN" /> : "CONNECT WALLET"}
+      <button className="wallet-connect" disabled={["requesting", "signing", "verifying"].includes(state)} onClick={connect} type="button">
+        {state === "requesting" ? <InlineActivity label="OPENING WALLET" /> : state === "signing" ? <InlineActivity label="AWAITING SIGNATURE" /> : state === "verifying" ? <InlineActivity label="VERIFYING" /> : state === "connected" ? "CONNECTED" : "CONNECT WALLET"}
       </button>
       {message ? <p role={state === "error" ? "alert" : "status"}>{message}</p> : null}
     </div>

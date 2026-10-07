@@ -3,18 +3,24 @@ import { zodTextFormat } from "openai/helpers/zod";
 
 import { species } from "../species";
 import { agentDecisionSchema, type AgentDecision } from "../decision";
-import type { Agent, ZooEvent } from "../types";
+import type { Agent, ControlAgent, ZooEvent } from "../types";
 
 type OpenAIContext = {
   agent: Agent;
   task: string;
   recentEvents: ZooEvent[];
+  controlAgent?: ControlAgent | null;
+  headAgent?: ControlAgent | null;
+  enclosureAgents: Agent[];
 };
 
 export async function createOpenAIDecision({
   agent,
   task,
   recentEvents,
+  controlAgent,
+  headAgent,
+  enclosureAgents,
 }: OpenAIContext): Promise<AgentDecision> {
   if (!process.env.OPENAI_API_KEY) {
     throw new Error("OPENAI_API_KEY is not configured");
@@ -28,8 +34,10 @@ export async function createOpenAIDecision({
         role: "system",
         content: [
           species[agent.species].instructions,
+          controlAgent ? `Pet agent profile: ${controlAgent.name}; provider ${controlAgent.provider}; model ${controlAgent.model}; role ${controlAgent.role}. ${controlAgent.description}` : "No separate pet agent is assigned; follow the species blueprint.",
+          headAgent ? `Enclosure head: ${headAgent.name}; role ${headAgent.role}. Coordinate with its stated direction.` : "This enclosure currently has no head agent.",
           "Return no more than three events. Never invent sources or completed actions.",
-          "targetAgentId must be raven-1, beaver-1, owl-1, meerkat-1, or null.",
+          `targetAgentId must be one of these residents or null: ${enclosureAgents.map((resident) => resident.id).join(", ")}.`,
         ].join("\n"),
       },
       {

@@ -3575,3 +3575,128 @@ body {
   .landing-nav__actions > a:not(.landing-nav__entry),
   .landing-nav__actions .wallet-control { display: none; }
 }
+
+/* AI agent registry and enclosure-to-pet assignment layer. */
+.operator-form--control-agent {
+  background:
+    radial-gradient(circle at 88% 12%, color-mix(in srgb, var(--color-accent) 12%, transparent), transparent 34%),
+    var(--color-paper-2);
+}
+
+.assignment-panel,
+.control-agent-directory,
+.enclosure-orchestrator {
+  min-width: 0;
+  margin: 0 0 var(--space-sm);
+  padding: var(--space-md);
+  border: var(--rule-hair) solid var(--color-rule);
+  background: var(--color-paper-2);
+}
+
+.assignment-panel .section-heading,
+.control-agent-directory .section-heading { margin-bottom: var(--space-md); }
+.assignment-panel .section-heading p { max-width: 60ch; margin-top: var(--space-2xs); color: var(--color-muted); font-size: var(--text-sm); }
+
+.assignment-list { border-top: var(--rule-hair) solid var(--color-rule); }
+.assignment-list form {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(10rem, 0.8fr) minmax(14rem, 1.2fr) auto;
+  gap: var(--space-sm);
+  align-items: end;
+  padding-block: var(--space-sm);
+  border-bottom: var(--rule-hair) solid var(--color-rule);
+}
+.assignment-list form > div { min-width: 0; display: flex; flex-direction: column; }
+.assignment-list b { font-size: var(--text-sm); }
+.assignment-list small { color: var(--color-muted); font-size: var(--text-xs); }
+.assignment-list select {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0 var(--space-sm);
+  border: var(--rule-hair) solid var(--color-rule-2);
+  border-radius: var(--radius-input);
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font: inherit;
+}
+
+.enclosure-orchestrator {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--space-md);
+  align-items: center;
+  border-color: var(--color-accent-soft);
+  background:
+    linear-gradient(105deg, color-mix(in srgb, var(--color-accent) 9%, transparent), transparent 48%),
+    var(--color-paper-2);
+}
+.enclosure-orchestrator > span {
+  display: grid;
+  width: 4.5rem;
+  aspect-ratio: 1;
+  place-items: center;
+  border: var(--rule-hair) solid var(--color-accent);
+  border-radius: 50%;
+  color: var(--color-accent);
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+}
+.enclosure-orchestrator small { color: var(--color-accent); font-family: var(--font-mono); font-size: var(--text-xs); }
+.enclosure-orchestrator h2 { margin-block: var(--space-3xs); font-size: var(--text-xl); }
+.enclosure-orchestrator p { max-width: 62ch; color: var(--color-muted); font-size: var(--text-sm); }
+.enclosure-orchestrator dl { min-width: 15rem; margin: 0; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.enclosure-orchestrator dt { color: var(--color-muted); font-size: var(--text-xs); }
+.enclosure-orchestrator dd { margin: var(--space-3xs) 0 0; font-size: var(--text-sm); }
+
+.control-agent-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-sm); }
+.control-agent-card {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  border: var(--rule-hair) solid var(--color-rule);
+  background: var(--color-paper);
+}
+.control-agent-card__head { min-width: 0; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--space-sm); align-items: center; }
+.control-agent-card__head > span { display: grid; width: 3.5rem; aspect-ratio: 1; place-items: center; border: var(--rule-hair) solid var(--color-accent); border-radius: 50%; color: var(--color-accent); font-family: var(--font-display); font-size: var(--text-lg); }
+.control-agent-card__head small { color: var(--color-accent); font-family: var(--font-mono); font-size: var(--text-xs); text-transform: uppercase; }
+.control-agent-card__head h2 { font-size: var(--text-lg); }
+.control-agent-card__head i { color: var(--color-muted); font-size: var(--text-xs); font-style: normal; }
+.control-agent-card > p { color: var(--color-muted); font-size: var(--text-sm); }
+.control-agent-card dl { grid-template-columns: repeat(4, minmax(0, 1fr)); margin: auto 0 0; padding-top: var(--space-sm); border-top: var(--rule-hair) solid var(--color-rule); }
+.control-agent-card dt { color: var(--color-muted); font-size: var(--text-xs); }
+.control-agent-card dd { margin: var(--space-3xs) 0 0; font-size: var(--text-sm); }
+.control-agent-card__links { display: flex; flex-wrap: wrap; gap: var(--space-2xs) var(--space-sm); }
+.control-agent-card__links a { color: var(--color-accent); font-size: var(--text-xs); text-underline-offset: 0.2em; }
+
+.wallet-control > p {
+  position: fixed;
+  z-index: 1000;
+  top: 5.25rem;
+  right: max(var(--space-md), calc((100vw - var(--page-max)) / 2));
+  width: min(26rem, calc(100vw - 2rem));
+  box-shadow: 0 1rem 3rem rgb(0 0 0 / 28%);
+}
+.wallet-control[data-state="connected"] > p { border-color: var(--color-success); color: var(--color-success); }
+
+@media (min-width: 64rem) {
+  .operator-form--control-agent { grid-column: 1 / -1; }
+  .operator-form--control-agent .action-button { align-self: flex-start; }
+}
+
+@media (max-width: 52rem) {
+  .control-agent-grid { grid-template-columns: minmax(0, 1fr); }
+  .enclosure-orchestrator { grid-template-columns: auto minmax(0, 1fr); }
+  .enclosure-orchestrator dl { grid-column: 1 / -1; }
+  .assignment-list form { grid-template-columns: minmax(0, 1fr); align-items: stretch; }
+  .assignment-list .action-button { width: 100%; }
+}
+
+@media (max-width: 30rem) {
+  .control-agent-card dl,
+  .enclosure-orchestrator dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .control-agent-card__head { grid-template-columns: auto minmax(0, 1fr); }
+  .control-agent-card__head i { grid-column: 2; }
+}

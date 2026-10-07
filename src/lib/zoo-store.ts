@@ -12,6 +12,8 @@ import type {
   Artifact,
   AuthRole,
   AuthSession,
+  ControlAgent,
+  ControlAgentProvider,
   Enclosure,
   RuntimeControl,
   SpeciesId,
@@ -45,6 +47,19 @@ const defaultEnclosure = {
   name: "Habitat 01",
   description: "The founding enclosure for Grok's four autonomous species.",
   territory: "Shared local event ledger",
+  headAgentId: "grok-orchestrator",
+  createdAt: "2026-10-04T00:00:00.000Z",
+};
+
+const defaultControlAgent: ControlAgent = {
+  id: "grok-orchestrator",
+  name: "Grok",
+  provider: "grok",
+  model: "Grok",
+  role: "Head orchestrator",
+  description: "Routes intent across the founding habitat and coordinates its four specialist pets.",
+  endpointUrl: null,
+  ownerAddress: null,
   createdAt: "2026-10-04T00:00:00.000Z",
 };
 
@@ -75,9 +90,24 @@ function mapAgent(row: Row): Agent {
     feed: Number(value(row, "feed")),
     feedMax: Number(value(row, "feed_max")),
     enclosureId: String(value(row, "enclosure_id") ?? defaultEnclosure.id),
+    controlAgentId: value(row, "control_agent_id") ? String(value(row, "control_agent_id")) : null,
     ownerAddress: value(row, "owner_address") ? String(value(row, "owner_address")) : null,
     task: String(value(row, "task")),
     lastAwakeAt: value(row, "last_awake_at") ? String(value(row, "last_awake_at")) : null,
+    createdAt: String(value(row, "created_at")),
+  };
+}
+
+function mapControlAgent(row: Row): ControlAgent {
+  return {
+    id: String(value(row, "id")),
+    name: String(value(row, "name")),
+    provider: String(value(row, "provider")) as ControlAgentProvider,
+    model: String(value(row, "model")),
+    role: String(value(row, "role")),
+    description: String(value(row, "description")),
+    endpointUrl: value(row, "endpoint_url") ? String(value(row, "endpoint_url")) : null,
+    ownerAddress: value(row, "owner_address") ? String(value(row, "owner_address")) : null,
     createdAt: String(value(row, "created_at")),
   };
 }
@@ -124,6 +154,7 @@ function mapEnclosure(row: Row): Enclosure {
     name: String(value(row, "name")),
     description: String(value(row, "description")),
     territory: String(value(row, "territory")),
+    headAgentId: value(row, "head_agent_id") ? String(value(row, "head_agent_id")) : null,
     ownerAddress: value(row, "owner_address") ? String(value(row, "owner_address")) : null,
     agentCount: Number(value(row, "agent_count") ?? 0),
     feed: Number(value(row, "feed") ?? 0),
@@ -135,11 +166,23 @@ function mapEnclosure(row: Row): Enclosure {
 async function initializeStore() {
   const schema: InStatement[] = [
     `CREATE TABLE IF NOT EXISTS app_metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL)`,
+    `CREATE TABLE IF NOT EXISTS control_agents (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      provider TEXT NOT NULL,
+      model TEXT NOT NULL,
+      role TEXT NOT NULL,
+      description TEXT NOT NULL,
+      endpoint_url TEXT,
+      owner_address TEXT,
+      created_at TEXT NOT NULL
+    )`,
     `CREATE TABLE IF NOT EXISTS enclosures (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
       description TEXT NOT NULL,
       territory TEXT NOT NULL,
+      head_agent_id TEXT REFERENCES control_agents(id),
       owner_address TEXT,
       created_at TEXT NOT NULL
     )`,
@@ -154,6 +197,7 @@ async function initializeStore() {
       feed INTEGER NOT NULL DEFAULT 10,
       feed_max INTEGER NOT NULL DEFAULT 10,
       enclosure_id TEXT REFERENCES enclosures(id),
+      control_agent_id TEXT REFERENCES control_agents(id),
       owner_address TEXT,
       task TEXT NOT NULL,
       last_awake_at TEXT,
@@ -220,19 +264,57 @@ async function initializeStore() {
   await zooStore.batch(schema, "write");
 
   await ensureColumn("agents", "enclosure_id", "enclosure_id TEXT");
+  await ensureColumn("agents", "control_agent_id", "control_agent_id TEXT");
   await ensureColumn("agents", "owner_address", "owner_address TEXT");
+  await ensureColumn("enclosures", "head_agent_id", "head_agent_id TEXT");
   await ensureColumn("enclosures", "owner_address", "owner_address TEXT");
   await zooStore.execute("CREATE INDEX IF NOT EXISTS agents_enclosure_idx ON agents(enclosure_id, created_at)");
   await zooStore.execute("CREATE INDEX IF NOT EXISTS agents_owner_idx ON agents(owner_address, created_at)");
+  await zooStore.execute("CREATE INDEX IF NOT EXISTS agents_control_agent_idx ON agents(control_agent_id, created_at)");
   await zooStore.execute("CREATE INDEX IF NOT EXISTS enclosures_owner_idx ON enclosures(owner_address, created_at)");
+  await zooStore.execute("CREATE INDEX IF NOT EXISTS enclosures_head_agent_idx ON enclosures(head_agent_id, created_at)");
+  await zooStore.execute("CREATE INDEX IF NOT EXISTS control_agents_owner_idx ON control_agents(owner_address, created_at)");
   await zooStore.execute("CREATE INDEX IF NOT EXISTS sessions_address_idx ON auth_sessions(address, expires_at)");
   await zooStore.execute("CREATE INDEX IF NOT EXISTS rate_limits_expiry_idx ON rate_limits(expires_at)");
 
   await zooStore.execute({
-    sql: `INSERT INTO enclosures (id, name, description, territory, created_at)
-      VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO NOTHING`,
-    args: [defaultEnclosure.id, defaultEnclosure.name, defaultEnclosure.description, defaultEnclosure.territory, defaultEnclosure.createdAt],
+    sql: `INSERT INTO control_agents (
+      id, name, provider, model, role, description, endpoint_url, owner_address, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO NOTHING`,
+    args: [
+      defaultControlAgent.id,
+      defaultControlAgent.name,
+      defaultControlAgent.provider,
+      defaultControlAgent.model,
+      defaultControlAgent.role,
+      defaultControlAgent.description,
+      defaultControlAgent.endpointUrl,
+      defaultControlAgent.ownerAddress,
+      defaultControlAgent.createdAt,
+    ],
   });
+
+  await zooStore.execute({
+    sql: `INSERT INTO enclosures (id, name, description, territory, head_agent_id, created_at)
+      VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO NOTHING`,
+    args: [defaultEnclosure.id, defaultEnclosure.name, defaultEnclosure.description, defaultEnclosure.territory, defaultEnclosure.headAgentId, defaultEnclosure.createdAt],
+  });
+
+  const agentHierarchyMigration = await zooStore.execute("SELECT value FROM app_metadata WHERE key = 'agent_hierarchy_v1'");
+  if (agentHierarchyMigration.rows[0]?.value !== "done") {
+    await zooStore.batch([
+      {
+        sql: "UPDATE enclosures SET head_agent_id = ? WHERE id = ? AND head_agent_id IS NULL",
+        args: [defaultControlAgent.id, defaultEnclosure.id],
+      },
+      {
+        sql: "UPDATE agents SET control_agent_id = ? WHERE id IN ('raven-1', 'beaver-1', 'owl-1', 'meerkat-1') AND control_agent_id IS NULL",
+        args: [defaultControlAgent.id],
+      },
+      `INSERT INTO app_metadata (key, value) VALUES ('agent_hierarchy_v1', 'done')
+        ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+    ], "write");
+  }
 
   await zooStore.execute({
     sql: "UPDATE agents SET enclosure_id = ? WHERE enclosure_id IS NULL OR enclosure_id = ''",
@@ -254,8 +336,8 @@ async function initializeStore() {
   const seedStatements: InStatement[] = initialAgents.map((agent) => ({
     sql: `INSERT INTO agents (
       id, name, species, emoji, role, description, status, feed, feed_max,
-      enclosure_id, task, last_awake_at, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      enclosure_id, control_agent_id, task, last_awake_at, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
       name = excluded.name,
       species = excluded.species,
@@ -274,6 +356,7 @@ async function initializeStore() {
       agent.feed,
       agent.feedMax,
       agent.enclosureId,
+      agent.controlAgentId,
       agent.task,
       agent.lastAwakeAt,
       agent.createdAt,
@@ -303,6 +386,48 @@ export async function getAgent(id: string): Promise<Agent | null> {
   await ready();
   const result = await zooStore.execute({ sql: "SELECT * FROM agents WHERE id = ?", args: [id] });
   return result.rows[0] ? mapAgent(result.rows[0]) : null;
+}
+
+export async function getControlAgents(): Promise<ControlAgent[]> {
+  await ready();
+  const result = await zooStore.execute("SELECT * FROM control_agents ORDER BY created_at, name");
+  return result.rows.map(mapControlAgent);
+}
+
+export async function getControlAgent(id: string): Promise<ControlAgent | null> {
+  await ready();
+  const result = await zooStore.execute({ sql: "SELECT * FROM control_agents WHERE id = ?", args: [id] });
+  return result.rows[0] ? mapControlAgent(result.rows[0]) : null;
+}
+
+export async function createControlAgent(input: {
+  name: string;
+  provider: ControlAgentProvider;
+  model: string;
+  role: string;
+  description: string;
+  endpointUrl?: string | null;
+  ownerAddress: string;
+}): Promise<ControlAgent> {
+  await ready();
+  const id = `operator-${randomUUID().slice(0, 8)}`;
+  const createdAt = new Date().toISOString();
+  await zooStore.execute({
+    sql: `INSERT INTO control_agents (
+      id, name, provider, model, role, description, endpoint_url, owner_address, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    args: [id, input.name, input.provider, input.model, input.role, input.description, input.endpointUrl || null, input.ownerAddress, createdAt],
+  });
+  return (await getControlAgent(id))!;
+}
+
+async function assertControlAgentAccess(id: string | null | undefined, ownerAddress: string, allowSystemAgent = false) {
+  if (!id) return;
+  const controlAgent = await getControlAgent(id);
+  if (!controlAgent) throw new Error("CONTROL_AGENT_NOT_FOUND");
+  if (controlAgent.ownerAddress?.toLowerCase() !== ownerAddress.toLowerCase() && !(allowSystemAgent && !controlAgent.ownerAddress)) {
+    throw new Error("CONTROL_AGENT_FORBIDDEN");
+  }
 }
 
 export async function getEnclosures(): Promise<Enclosure[]> {
@@ -345,16 +470,39 @@ export async function createEnclosure(input: {
   name: string;
   description: string;
   territory: string;
+  headAgentId?: string | null;
   ownerAddress: string;
+  allowSystemAgent?: boolean;
 }): Promise<Enclosure> {
   await ready();
+  await assertControlAgentAccess(input.headAgentId, input.ownerAddress, input.allowSystemAgent);
   const id = `enclosure-${randomUUID().slice(0, 8)}`;
   const createdAt = new Date().toISOString();
   await zooStore.execute({
-    sql: "INSERT INTO enclosures (id, name, description, territory, owner_address, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-    args: [id, input.name, input.description, input.territory, input.ownerAddress, createdAt],
+    sql: "INSERT INTO enclosures (id, name, description, territory, head_agent_id, owner_address, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    args: [id, input.name, input.description, input.territory, input.headAgentId || null, input.ownerAddress, createdAt],
   });
   return (await getEnclosure(id))!;
+}
+
+export async function assignEnclosureHead(input: {
+  enclosureId: string;
+  headAgentId: string | null;
+  ownerAddress: string;
+  isAdmin?: boolean;
+}): Promise<Enclosure> {
+  await ready();
+  const enclosure = await getEnclosure(input.enclosureId);
+  if (!enclosure) throw new Error("ENCLOSURE_NOT_FOUND");
+  if (!input.isAdmin && enclosure.ownerAddress?.toLowerCase() !== input.ownerAddress.toLowerCase()) {
+    throw new Error("ENCLOSURE_FORBIDDEN");
+  }
+  await assertControlAgentAccess(input.headAgentId, input.ownerAddress, input.isAdmin);
+  await zooStore.execute({
+    sql: "UPDATE enclosures SET head_agent_id = ? WHERE id = ?",
+    args: [input.headAgentId || null, input.enclosureId],
+  });
+  return (await getEnclosure(input.enclosureId))!;
 }
 
 export async function createAgent(input: {
@@ -365,6 +513,7 @@ export async function createAgent(input: {
   task?: string;
   feedMax: number;
   enclosureId: string;
+  controlAgentId?: string | null;
   ownerAddress: string;
   allowSystemEnclosure?: boolean;
 }): Promise<Agent> {
@@ -374,6 +523,7 @@ export async function createAgent(input: {
   if (enclosure.ownerAddress !== input.ownerAddress && !input.allowSystemEnclosure) {
     throw new Error("ENCLOSURE_FORBIDDEN");
   }
+  await assertControlAgentAccess(input.controlAgentId, input.ownerAddress, input.allowSystemEnclosure);
 
   const blueprint = species[input.species];
   const id = `${input.species}-${randomUUID().slice(0, 8)}`;
@@ -381,8 +531,8 @@ export async function createAgent(input: {
   await zooStore.execute({
     sql: `INSERT INTO agents (
       id, name, species, emoji, role, description, status, feed, feed_max,
-      enclosure_id, owner_address, task, last_awake_at, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, 'sleeping', ?, ?, ?, ?, ?, NULL, ?)`,
+      enclosure_id, control_agent_id, owner_address, task, last_awake_at, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, 'sleeping', ?, ?, ?, ?, ?, ?, NULL, ?)`,
     args: [
       id,
       input.name,
@@ -393,12 +543,33 @@ export async function createAgent(input: {
       input.feedMax,
       input.feedMax,
       input.enclosureId,
+      input.controlAgentId || null,
       input.ownerAddress,
       input.task || blueprint.defaultTask,
       createdAt,
     ],
   });
   return (await getAgent(id))!;
+}
+
+export async function assignAnimalControlAgent(input: {
+  animalId: string;
+  controlAgentId: string | null;
+  ownerAddress: string;
+  isAdmin?: boolean;
+}): Promise<Agent> {
+  await ready();
+  const animal = await getAgent(input.animalId);
+  if (!animal) throw new Error("ANIMAL_NOT_FOUND");
+  if (!input.isAdmin && animal.ownerAddress?.toLowerCase() !== input.ownerAddress.toLowerCase()) {
+    throw new Error("ANIMAL_FORBIDDEN");
+  }
+  await assertControlAgentAccess(input.controlAgentId, input.ownerAddress, input.isAdmin);
+  await zooStore.execute({
+    sql: "UPDATE agents SET control_agent_id = ? WHERE id = ?",
+    args: [input.controlAgentId || null, input.animalId],
+  });
+  return (await getAgent(input.animalId))!;
 }
 
 export async function getRecentEvents(limit = 20): Promise<ZooEvent[]> {
