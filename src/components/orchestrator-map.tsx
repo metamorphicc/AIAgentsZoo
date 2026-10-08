@@ -11,7 +11,7 @@ export function OrchestratorMap() {
   return (
     <figure className="orchestrator-map" aria-labelledby="orchestrator-map-title">
       <figcaption className="sr-only" id="orchestrator-map-title">
-        Grok routes work through a shared ledger to Raven, Beaver, Owl, and Meerkat.
+        The founding habitat places the Grok head profile above Raven, Beaver, Owl, and Meerkat.
       </figcaption>
 
       <svg className="orchestrator-map__routes" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
@@ -25,7 +25,7 @@ export function OrchestratorMap() {
       <div className="orchestrator-map__grok">
         <span className="orchestrator-map__grok-mark" aria-hidden="true">G</span>
         <span><small>PRIMARY ORCHESTRATOR</small><strong>GROK</strong></span>
-        <i>Routes intent</i>
+        <i>Head profile</i>
       </div>
 
       <div className="orchestrator-map__ledger">
@@ -46,7 +46,7 @@ export function OrchestratorMap() {
         ))}
       </ol>
 
-      <p className="orchestrator-map__honesty">VISUAL LAYER · RUNTIME CONNECTION NEXT</p>
+      <p className="orchestrator-map__honesty">SCOUT → BUILD → REMEMBER → WATCH</p>
     </figure>
   );
 }

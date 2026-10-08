@@ -4,12 +4,13 @@ import { notFound } from "next/navigation";
 import { AgentRow, EmptyState, PageHeading } from "@/components/product-ui";
 import { AgentAssignmentPanel } from "@/components/agent-assignment-panel";
 import { RefillButton } from "@/components/refill-button";
+import { HabitatWorkflow } from "@/components/habitat-workflow";
 import { ZooShell } from "@/components/zoo-shell";
 import { formatDate, formatEventType } from "@/lib/format";
 import { shortAddress } from "@/lib/auth/config";
 import { canManageResource } from "@/lib/auth/authorization";
 import { getSession } from "@/lib/auth/session";
-import { getControlAgents, getEnclosure, getEnclosureAgents, getRecentEvents } from "@/lib/zoo-store";
+import { getControlAgents, getEnclosure, getEnclosureAgents, getEnclosureEvents, getRuntimeControl } from "@/lib/zoo-store";
 
 export const dynamic = "force-dynamic";
 
@@ -18,14 +19,12 @@ export default async function EnclosurePage({ params }: { params: Promise<{ id: 
   const enclosure = await getEnclosure(id);
   if (!enclosure) notFound();
 
-  const [agents, controlAgents, recentEvents, session] = await Promise.all([getEnclosureAgents(id), getControlAgents(), getRecentEvents(100), getSession()]);
+  const [agents, controlAgents, events, session, runtime] = await Promise.all([getEnclosureAgents(id), getControlAgents(), getEnclosureEvents(id, 12), getSession(), getRuntimeControl()]);
   const canManage = canManageResource(session, enclosure.ownerAddress);
   const assignableControlAgents = session?.role === "admin"
     ? controlAgents
     : controlAgents.filter((agent) => agent.ownerAddress?.toLowerCase() === session?.address.toLowerCase());
   const headAgent = controlAgents.find((agent) => agent.id === enclosure.headAgentId) ?? null;
-  const residentIds = new Set(agents.map((agent) => agent.id));
-  const events = recentEvents.filter((event) => residentIds.has(event.agentId) || Boolean(event.targetAgentId && residentIds.has(event.targetAgentId))).slice(0, 12);
 
   return (
     <ZooShell active="enclosures">
@@ -43,6 +42,8 @@ export default async function EnclosurePage({ params }: { params: Promise<{ id: 
       </section>
 
       {headAgent ? <section className="enclosure-orchestrator"><span aria-hidden="true">{headAgent.name.slice(0, 1).toUpperCase()}</span><div><small>HEAD AGENT · {headAgent.provider.toUpperCase()}</small><h2>{headAgent.name}</h2><p>{headAgent.description}</p></div><dl><div><dt>Role</dt><dd>{headAgent.role}</dd></div><div><dt>Model</dt><dd>{headAgent.model}</dd></div><div><dt>Guardian</dt><dd>{headAgent.ownerAddress ? shortAddress(headAgent.ownerAddress) : "Zoo system"}</dd></div></dl></section> : null}
+
+      {agents.length ? <HabitatWorkflow agents={agents} enclosureId={id} headName={headAgent?.name ?? "Habitat"} canRun={canManage} paused={runtime.paused} /> : null}
 
       {canManage ? <AgentAssignmentPanel animals={agents} controlAgents={assignableControlAgents} enclosure={enclosure} /> : null}
 

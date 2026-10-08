@@ -11,6 +11,7 @@
   --color-accent: oklch(91% 0.205 118);
   --color-accent-soft: oklch(34% 0.11 133);
   --color-accent-ink: oklch(14% 0.018 135);
+  --color-button-ink: #000;
   --color-focus: oklch(91% 0.205 118);
   --color-error: oklch(67% 0.21 28);
   --color-warning: oklch(82% 0.17 82);

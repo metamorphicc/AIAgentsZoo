@@ -59,7 +59,7 @@ export function WalletSessionControl({ session, compact = false }: {
       const healthResponse = await fetch("/api/health", { cache: "no-store" });
       const health = await healthResponse.json() as { durable?: boolean; error?: string };
       if (!healthResponse.ok || !health.durable) {
-        throw new Error(health.error ?? "Wallet sign-in is temporarily unavailable: this deployment has no durable database. Configure TURSO_DATABASE_URL and TURSO_AUTH_TOKEN in Vercel, then redeploy.");
+        throw new Error("Wallet sign-in is temporarily unavailable. Please try again later.");
       }
 
       setMessage("Waiting for wallet access…");

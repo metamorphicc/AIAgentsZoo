@@ -39,6 +39,16 @@ Optional model variables:
 
 Without them, the deterministic provider remains enabled and the product still works without paid model calls.
 
+For the launch without a model API, set `AGENT_PROVIDER=local`. Existing `demo` values also fall back to the local workflow. The local species inspect enclosure records, route actual events, publish sourced field notes, archive outputs, and check resident budgets. The Grok entry is the founding head profile; it does not call the xAI API.
+
+Runtime ceilings (optional; these are the defaults):
+
+- `RUNTIME_DAILY_CYCLE_LIMIT=500`
+- `RUNTIME_HOURLY_CYCLE_LIMIT=100`
+- `ENCLOSURE_DAILY_CYCLE_LIMIT=120`
+
+Daily and hourly windows use UTC. Failed starts that reached execution also count. Refilling feed never resets a runtime allowance. For model-assisted operation, lower these limits before enabling paid calls.
+
 ## 3. Deploy
 
 Import the GitHub repository in Vercel or connect the existing Vercel project to the branch you want to release. Vercel should detect **Next.js** automatically. Use the defaults:
@@ -75,7 +85,33 @@ vercel domains inspect aiagentzoo.com
 - Confirm the guardian cannot wake, refill, or signal with another wallet’s animals.
 - Connect an address listed in `ADMIN_WALLETS` and verify the runtime pause/resume control on `/manage`.
 - Wake one animal and confirm feed decreases by one and the Trace gets new records.
+- Open an owned enclosure, enter a mission, and press **Run Habitat**. The stream should show one cycle per available species (at most four), a Beaver field note, and an Owl memory record when those species are present.
+- Repeat the same run request ID and confirm it is rejected without spending feed again.
 - Refill it and confirm the refill appears in the Trace.
+- In the admin console, hide test enclosures and unused profiles with **Public directory → Hide**. This preserves their data and can be reversed with **Restore**. Hidden enclosure residents, traces, and artifacts disappear from public pages.
+- Confirm `/opengraph-image`, `/robots.txt`, and `/sitemap.xml` return 200, and the landing HTML includes Open Graph and Twitter card tags.
 - Check the site at 375 px and desktop width.
 
 Wallet identity and guardian ownership are implemented off-chain. Token, staking, federation, agent-native keys, and on-chain reputation remain intentionally unimplemented. The deployed product does not pretend otherwise.
+
+## 6. Publish this release
+
+The release changes are on `feature/grok-orchestrator`. If Vercel Production tracks `main`, merge the branch into `main` before pushing, or deliberately choose the release branch in Vercel. A preview deployment does not update `agentzoo.tech`.
+
+After the production deployment, open `/zoo` and check that **Follow the habitat** is present. Verify refill buttons have black text, connect your keeper wallet, hide your test entries, and run Habitat 01 once to create a current field note and memory record. Keep a Turso backup before moderating production data.
+
+## Isolated browser verification
+
+`npm test` uses an in-memory libSQL database and does not touch `.env` storage. The optional `scripts/launch-smoke.mjs` also verifies sign-in, cross-wallet permissions, quotas, streamed runs, replay protection, moderation, four animated models, mobile layouts, reduced motion, and share metadata. It is pinned to `http://localhost:3038` and creates test records there; never point it at production.
+
+Start the built app with isolated storage and the public test account (never use that address for real funds):
+
+```powershell
+$env:TURSO_DATABASE_URL='file:C:/Temp/agentzoo-release-check.db'
+$env:TURSO_AUTH_TOKEN=''
+$env:AGENT_PROVIDER='local'
+$env:ADMIN_WALLETS='0x7E5F4552091A69125d5DfCb7b8C2659029395Bdf'
+npm start -- --port 3038
+```
+
+The smoke script requires Playwright and installed Google Chrome. With Playwright available, run `node scripts/launch-smoke.mjs`; alternatively set `ZOO_TEST_PLAYWRIGHT_MODULE` to its `index.mjs` path. Stop the test server before removing the isolated database.
