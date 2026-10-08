@@ -53,12 +53,12 @@ def ico(name, location, scale, mat, rotation=(0.0, 0.0, 0.0), subdivisions=2):
 
 def cone(name, location, radius, depth, mat, rotation=(0.0, 0.0, 0.0), vertices=8):
     bpy.ops.mesh.primitive_cone_add(vertices=vertices, radius1=radius, radius2=0.0, depth=depth, location=location, rotation=rotation)
-    return finish_mesh(bpy.context.object, name, mat, smooth=False)
+    return finish_mesh(bpy.context.object, name, mat, rotation=rotation, smooth=False)
 
 
 def cylinder(name, location, radius, depth, mat, rotation=(0.0, 0.0, 0.0), vertices=8):
     bpy.ops.mesh.primitive_cylinder_add(vertices=vertices, radius=radius, depth=depth, location=location, rotation=rotation)
-    return finish_mesh(bpy.context.object, name, mat, smooth=False)
+    return finish_mesh(bpy.context.object, name, mat, rotation=rotation, smooth=False)
 
 
 def cylinder_between(name, start, end, radius, mat, vertices=8):
@@ -73,9 +73,47 @@ def cylinder_between(name, start, end, radius, mat, vertices=8):
     return obj
 
 
+def cone_between(name, start, end, radius, mat, vertices=8):
+    start_vector = Vector(start)
+    end_vector = Vector(end)
+    direction = end_vector - start_vector
+    obj = cone(name, (start_vector + end_vector) / 2, radius, direction.length, mat, vertices=vertices)
+    obj.rotation_euler = direction.to_track_quat("Z", "Y").to_euler()
+    return obj
+
+
+def ellipsoid_hatching(name, center, radii, mat, rotation=(0.0, 0.0, 0.0)):
+    """Thin surface-following diamond seams, never cylinders through the paddle."""
+    rx, ry, rz = radii
+    vertices, faces = [], []
+    for row in range(-3, 4):
+        for column in range(-3, 4):
+            x = column * 0.15 + (0.075 if row % 2 else 0)
+            y = row * 0.22
+            diamond = [(x - 0.07, y), (x, y + 0.10), (x + 0.07, y), (x, y - 0.10)]
+            if any((px / rx) ** 2 + (py / ry) ** 2 > 0.85 for px, py in diamond):
+                continue
+            for start, end in zip(diamond, diamond[1:] + diamond[:1]):
+                direction = Vector((end[0] - start[0], end[1] - start[1]))
+                across = Vector((-direction.y, direction.x)).normalized() * 0.004
+                corners = [Vector(start) + across, Vector(end) + across, Vector(end) - across, Vector(start) - across]
+                offset = len(vertices)
+                for corner in corners:
+                    height = rz * math.sqrt(max(0, 1 - (corner.x / rx) ** 2 - (corner.y / ry) ** 2)) + 0.0025
+                    vertices.append((corner.x, corner.y, height))
+                faces.append(tuple(range(offset, offset + 4)))
+    mesh = bpy.data.meshes.new(f"{name}Mesh")
+    mesh.from_pydata(vertices, [], faces)
+    mesh.update()
+    obj = bpy.data.objects.new(name, mesh)
+    bpy.context.collection.objects.link(obj)
+    obj.location = center
+    return finish_mesh(obj, name, mat, rotation=rotation, smooth=False)
+
+
 def cube(name, location, scale, mat, rotation=(0.0, 0.0, 0.0), bevel=0.0):
     bpy.ops.mesh.primitive_cube_add(size=1.0, location=location, rotation=rotation)
-    obj = finish_mesh(bpy.context.object, name, mat, scale, smooth=False)
+    obj = finish_mesh(bpy.context.object, name, mat, scale, rotation, smooth=False)
     if bevel:
         modifier = obj.modifiers.new("Soft edges", "BEVEL")
         modifier.width = bevel
@@ -140,6 +178,8 @@ def create_rig(name, bones):
 
 
 def parent_to_bone(obj, rig, bone_name):
+    # Pending primitive rotations must reach matrix_world before preserving it.
+    bpy.context.view_layer.update()
     world = obj.matrix_world.copy()
     obj.parent = rig
     obj.parent_type = "BONE"

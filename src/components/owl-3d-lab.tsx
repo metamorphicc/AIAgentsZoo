@@ -3,8 +3,10 @@
 import { ContactShadows, Grid, OrbitControls, useGLTF, useProgress } from "@react-three/drei";
 import { Canvas, useFrame } from "@react-three/fiber";
 import Image from "next/image";
+import { Quaternion, Vector3 } from "three";
 import { Component, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { animalMotion, behaviorDuration } from "@/lib/zoo/animal-motion";
+import { animalMotion, behaviorDuration, owlLidScale } from "@/lib/zoo/animal-motion";
+import { animalJointNames, findAnimalJoint } from "@/lib/zoo/animal-rig";
 
 import type { SpeciesId } from "@/lib/zoo/types";
 
@@ -30,7 +32,7 @@ const animalProfiles = {
     species: "beaver",
     actions: ["Idle", "Gnaw", "Tail Sweep", "Build"],
     camera: [5.8, 3.1, 7.2],
-    modelPath: "/models/beaver-agent.glb",
+    modelPath: "/models/beaver-agent.glb?v=anatomy-2",
     scale: 1.05,
     target: [0, 1.25, 0],
   },
@@ -38,7 +40,7 @@ const animalProfiles = {
     species: "owl",
     actions: ["Idle", "Look Around", "Blink", "Signal"],
     camera: [5.8, 3.6, 7.4],
-    modelPath: "/models/owl-agent.glb",
+    modelPath: "/models/owl-agent.glb?v=anatomy-2",
     scale: 0.92,
     target: [0, 1.9, 0],
   },
@@ -72,9 +74,10 @@ function AnimalModel({
 }) {
   const { scene } = useGLTF(profile.modelPath);
   const model = useMemo(() => scene.clone(true), [scene]);
+  const tailTurn = useMemo(() => ({ rotation: new Quaternion(), axis: new Vector3(0, 1, 0) }), []);
   const startedAt = useRef(0);
-  const joints = useMemo(() => ["body", "head", "jaw", "tail", "wing.L", "wing.R", "arm.L", "arm.R", "lid.L", "lid.R"].flatMap((name) => {
-    const node = model.getObjectByName(name);
+  const joints = useMemo(() => animalJointNames.flatMap((name) => {
+    const node = findAnimalJoint(model, name);
     return node ? [{ name, node, rotation: node.rotation.clone(), scale: node.scale.clone() }] : [];
   }), [model]);
 
@@ -92,15 +95,18 @@ function AnimalModel({
     for (const joint of joints) {
       joint.node.rotation.copy(joint.rotation);
       joint.node.scale.copy(joint.scale);
+      if (profile.species === "owl" && joint.name.startsWith("lid.")) {
+        joint.node.scale.set(joint.scale.x, owlLidScale(reducedMotion ? 0 : motion.blink), joint.scale.z);
+        continue;
+      }
       if (reducedMotion) continue;
       const { x, y, z } = joint.rotation;
       if (joint.name === "head") joint.node.rotation.set(x + motion.headX, y + motion.headY, z + motion.headZ);
       if (joint.name === "body") joint.node.scale.set(joint.scale.x, joint.scale.y * (1 + motion.breath), joint.scale.z);
       if (joint.name === "jaw") joint.node.rotation.set(x + motion.jaw, y, z);
-      if (joint.name === "tail") joint.node.rotation.set(x, y + motion.tail, z);
+      if (joint.name === "tail") joint.node.quaternion.premultiply(tailTurn.rotation.setFromAxisAngle(tailTurn.axis, motion.tail));
       if (joint.name.startsWith("wing.")) joint.node.rotation.set(x, y, z + motion.wing * (joint.name.endsWith("L") ? 1 : -1));
       if (joint.name.startsWith("arm.")) joint.node.rotation.set(x + motion.arm, y, z);
-      if (joint.name.startsWith("lid.")) joint.node.rotation.set(x + motion.blink * 0.9, y, z);
     }
   });
 
