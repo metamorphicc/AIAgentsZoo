@@ -5,6 +5,11 @@ export const behaviorDuration: Record<string, number> = {
   Gnaw: 3, "Tail Sweep": 2.8, Build: 3.4, Lookout: 3.7, Alert: 2.2,
 };
 
+// The owl's upper lids are anchored above each eye, and grow down to close.
+export function owlLidScale(blink: number) {
+  return 0.015 + 0.985 * Math.max(0, Math.min(1, blink));
+}
+
 export function animalMotion(species: SpeciesId, behavior: string, elapsed: number, clock: number) {
   const duration = behaviorDuration[behavior] ?? 3;
   const envelope = behavior === "Idle" ? 0 : Math.max(0, Math.min(1, elapsed / 0.3, (duration - elapsed) / 0.35));

@@ -5,11 +5,13 @@ import math
 from zoo_model_utils import (
     attach,
     cone,
+    cone_between,
     create_action,
     create_rig,
     cube,
     cylinder,
     cylinder_between,
+    ellipsoid_hatching,
     feather_row,
     ico,
     material,
@@ -31,8 +33,10 @@ def build_owl():
     cream = material("Face / warm cream", (1.0, 0.78, 0.43), roughness=0.72)
     chest = material("Chest / pale down", (0.88, 0.70, 0.38), roughness=0.86)
     ink = material("Eyes / midnight", (0.006, 0.009, 0.007), roughness=0.28)
-    lime = material("Eyes / agent signal", (0.66, 1.0, 0.08), metallic=0.1, roughness=0.24)
     orange = material("Beak and talons", (1.0, 0.38, 0.018), roughness=0.54)
+    iris = material("Eyes / amber iris", (0.92, 0.58, 0.06), roughness=0.46)
+    glint = material("Eyes / soft catchlight", (1.0, 0.95, 0.77), roughness=0.32)
+    claw = material("Talons / dark horn", (0.12, 0.055, 0.022), roughness=0.65)
 
     rig = create_rig("Owl", [
         ("root", (0, 0, 0), (0, 0, 0.6), None),
@@ -40,8 +44,8 @@ def build_owl():
         ("head", (0, 0, 2.5), (0, 0, 3.55), "body"),
         ("wing.L", (0.45, 0, 2.3), (1.25, 0, 1.45), "body"),
         ("wing.R", (-0.45, 0, 2.3), (-1.25, 0, 1.45), "body"),
-        ("lid.L", (0.43, -0.82, 3.1), (0.43, -0.82, 3.34), "head"),
-        ("lid.R", (-0.43, -0.82, 3.1), (-0.43, -0.82, 3.34), "head"),
+        ("lid.L", (0.42, -1.015, 3.325), (0.42, -1.015, 3.565), "head"),
+        ("lid.R", (-0.42, -1.015, 3.325), (-0.42, -1.015, 3.565), "head"),
     ])
 
     body = [
@@ -51,26 +55,40 @@ def build_owl():
     feather_row("Chest_Feather", (0, -0.79, 1.36), 5, 0.22, (0.11, 0.045, 0.19), cream, body)
     feather_row("Tail_Feather", (0, 0.18, 0.56), 5, 0.18, (0.14, 0.25, 0.5), rust_light, body)
     for side in (-1, 1):
-        body.append(cylinder(f"Leg_{side}", (0.36 * side, 0, 0.38), 0.08, 0.48, orange, vertices=7))
-        for toe in (-0.12, 0, 0.12):
-            body.append(cylinder(f"Toe_{side}_{toe}", (0.36 * side + toe, -0.18, 0.17), 0.038, 0.4, orange, rotation=(R(78), 0, 0), vertices=6))
+        leg_x = 0.34 * side
+        ankle = (leg_x, -0.07, 0.25)
+        body.append(cylinder_between(f"Leg_{side}", (leg_x, 0.015, 0.51), ankle, 0.066, orange))
+        body.append(ico(f"Foot_Pad_{side}", (leg_x, -0.13, 0.21), (0.14, 0.17, 0.085), orange))
+        for toe_index, spread in enumerate((-0.15, 0, 0.15)):
+            knuckle = (leg_x + spread * 0.45, -0.22, 0.18)
+            tip = (leg_x + spread, -0.42 + abs(spread) * 0.25, 0.115)
+            body.append(cylinder_between(f"Toe_Base_{side}_{toe_index}", ankle, knuckle, 0.035, orange, vertices=6))
+            body.append(cylinder_between(f"Toe_Tip_{side}_{toe_index}", knuckle, tip, 0.029, orange, vertices=6))
+            body.append(cone_between(f"Claw_{side}_{toe_index}", tip, (tip[0] + spread * 0.12, tip[1] - 0.105, 0.065), 0.034, claw))
+        rear = (leg_x + 0.08 * side, 0.13, 0.13)
+        body.append(cylinder_between(f"Rear_Toe_{side}", ankle, rear, 0.03, orange, vertices=6))
+        body.append(cone_between(f"Rear_Claw_{side}", rear, (rear[0], 0.22, 0.08), 0.03, claw))
 
     head = [
         ico("Owl_Head", (0, -0.01, 2.96), (1.1, 0.78, 0.9), rust),
         ico("Face_Disc_L", (0.42, -0.68, 3.02), (0.6, 0.13, 0.59), cream),
         ico("Face_Disc_R", (-0.42, -0.68, 3.02), (0.6, 0.13, 0.59), cream),
-        ico("Eye_L", (0.42, -0.82, 3.06), (0.205, 0.1, 0.235), ink),
-        ico("Eye_R", (-0.42, -0.82, 3.06), (0.205, 0.1, 0.235), ink),
-        ico("Pupil_L", (0.42, -0.91, 3.08), (0.072, 0.045, 0.083), lime),
-        ico("Pupil_R", (-0.42, -0.91, 3.08), (0.072, 0.045, 0.083), lime),
-        cone("Beak", (0, -0.92, 2.74), 0.19, 0.48, orange, rotation=(R(90), 0, 0)),
+        ico("Eye_L", (0.42, -0.84, 3.065), (0.245, 0.11, 0.255), ink, subdivisions=3),
+        ico("Eye_R", (-0.42, -0.84, 3.065), (0.245, 0.11, 0.255), ink, subdivisions=3),
+        ico("Iris_L", (0.42, -0.947, 3.065), (0.182, 0.035, 0.192), iris, subdivisions=3),
+        ico("Iris_R", (-0.42, -0.947, 3.065), (0.182, 0.035, 0.192), iris, subdivisions=3),
+        ico("Pupil_L", (0.42, -0.982, 3.065), (0.088, 0.023, 0.11), ink, subdivisions=3),
+        ico("Pupil_R", (-0.42, -0.982, 3.065), (0.088, 0.023, 0.11), ink, subdivisions=3),
+        ico("Eye_Glint_L", (0.385, -1.008, 3.11), (0.029, 0.009, 0.035), glint),
+        ico("Eye_Glint_R", (-0.455, -1.008, 3.11), (0.029, 0.009, 0.035), glint),
+        cone_between("Beak", (0, -0.83, 2.84), (0, -1.10, 2.66), 0.145, orange),
         cone("Ear_Tuft_L", (0.67, -0.02, 3.7), 0.22, 0.62, rust_light, rotation=(0, R(-12), 0)),
         cone("Ear_Tuft_R", (-0.67, -0.02, 3.7), 0.22, 0.62, rust_light, rotation=(0, R(12), 0)),
-        ico("Brow_L", (0.42, -0.83, 3.34), (0.36, 0.055, 0.11), brown, rotation=(0, 0, R(-10)), subdivisions=1),
-        ico("Brow_R", (-0.42, -0.83, 3.34), (0.36, 0.055, 0.11), brown, rotation=(0, 0, R(10)), subdivisions=1),
+        ico("Brow_L", (0.42, -0.83, 3.385), (0.32, 0.055, 0.08), brown, rotation=(0, 0, R(-7)), subdivisions=2),
+        ico("Brow_R", (-0.42, -0.83, 3.385), (0.32, 0.055, 0.08), brown, rotation=(0, 0, R(7)), subdivisions=2),
     ]
-    lids_l = [ico("Eyelid_L", (0.42, -0.925, 3.08), (0.22, 0.035, 0.055), rust, subdivisions=2)]
-    lids_r = [ico("Eyelid_R", (-0.42, -0.925, 3.08), (0.22, 0.035, 0.055), rust, subdivisions=2)]
+    lids_l = [ico("Eyelid_L", (0.42, -1.015, 3.065), (0.25, 0.028, 0.26), cream, subdivisions=3)]
+    lids_r = [ico("Eyelid_R", (-0.42, -1.015, 3.065), (0.25, 0.028, 0.26), cream, subdivisions=3)]
     wing_l = [ico("Wing_L", (0.93, 0.02, 1.72), (0.46, 0.42, 1.1), rust, rotation=(0, R(-15), R(-8)))]
     wing_r = [ico("Wing_R", (-0.93, 0.02, 1.72), (0.46, 0.42, 1.1), rust, rotation=(0, R(15), R(8)))]
     for index, z in enumerate((1.35, 1.65, 1.95)):
@@ -80,8 +98,8 @@ def build_owl():
     attach(body, rig, "body"); attach(head, rig, "head"); attach(lids_l, rig, "lid.L"); attach(lids_r, rig, "lid.R")
     attach(wing_l, rig, "wing.L"); attach(wing_r, rig, "wing.R")
 
-    open_lids = {"lid.L": {"scale": (1, 1, 0.18)}, "lid.R": {"scale": (1, 1, 0.18)}}
-    closed_lids = {"lid.L": {"scale": (1, 1, 4.1)}, "lid.R": {"scale": (1, 1, 4.1)}}
+    open_lids = {"lid.L": {"scale": (1, 0.015, 1)}, "lid.R": {"scale": (1, 0.015, 1)}}
+    closed_lids = {"lid.L": {"scale": (1, 1, 1)}, "lid.R": {"scale": (1, 1, 1)}}
     idle = create_action(rig, "Idle", [
         (1, {"root": {"location": (0, 0, 0)}, "body": {"rotation": (0, 0, R(-1))}, "head": {"rotation": (0, 0, R(-9))}, **open_lids}),
         (28, {"root": {"location": (0, 0, 0.045)}, "body": {"rotation": (R(1), 0, R(1))}, "head": {"rotation": (R(1), 0, R(14))}, **open_lids}),
@@ -182,6 +200,7 @@ def build_beaver():
     warm = material("Fur / warm flank", (0.55, 0.23, 0.065), roughness=0.86)
     cream = material("Fur / muzzle and belly", (0.78, 0.54, 0.28), roughness=0.88)
     tail_mat = material("Tail / leather", (0.18, 0.085, 0.035), roughness=0.76)
+    tail_seam = material("Tail / fine scale seams", (0.08, 0.035, 0.016), roughness=0.9)
     tooth = material("Teeth / ivory", (0.96, 0.86, 0.58), roughness=0.55)
     ink = material("Eyes / midnight", (0.008, 0.01, 0.008), roughness=0.3)
     lime = material("Eyes / agent signal", (0.66, 1.0, 0.08), metallic=0.08, roughness=0.24)
@@ -189,7 +208,7 @@ def build_beaver():
         ("root", (0, 0, 0), (0, 0, 0.45), None), ("body", (0, 0, 0.45), (0, 0, 1.9), "root"),
         ("head", (0, -0.15, 1.65), (0, -0.3, 2.55), "body"), ("jaw", (0, -0.85, 1.85), (0, -1.05, 1.75), "head"),
         ("arm.L", (0.42, -0.38, 1.55), (0.72, -0.72, 1.0), "body"), ("arm.R", (-0.42, -0.38, 1.55), (-0.72, -0.72, 1.0), "body"),
-        ("tail", (0, 0.5, 0.72), (0, 1.3, 0.45), "body"),
+        ("tail", (0, 0.48, 0.38), (0, 1.4, 0.27), "body"),
     ])
     body = [ico("Beaver_Body", (0, 0, 1.08), (1.18, 0.82, 0.92), brown), ico("Beaver_Belly", (0, -0.72, 1.04), (0.68, 0.13, 0.62), cream)]
     for side in (-1, 1):
@@ -197,12 +216,18 @@ def build_beaver():
     head = [ico("Beaver_Head", (0, -0.45, 1.88), (0.82, 0.68, 0.67), warm), ico("Muzzle_L", (0.28, -0.98, 1.72), (0.36, 0.2, 0.28), cream), ico("Muzzle_R", (-0.28, -0.98, 1.72), (0.36, 0.2, 0.28), cream), ico("Nose", (0, -1.19, 1.88), (0.24, 0.13, 0.17), ink)]
     for side in (-1, 1):
         head += [ico(f"Ear_{side}", (0.58 * side, -0.2, 2.28), (0.24, 0.13, 0.27), tail_mat, subdivisions=1), ico(f"Eye_{side}", (0.34 * side, -0.96, 2.08), (0.13, 0.07, 0.145), ink), ico(f"Pupil_{side}", (0.34 * side, -1.025, 2.1), (0.05, 0.025, 0.058), lime)]
-    jaw = [cube("Incisor_L", (0.11, -1.16, 1.55), (0.105, 0.065, 0.28), tooth, bevel=0.035), cube("Incisor_R", (-0.11, -1.16, 1.55), (0.105, 0.065, 0.28), tooth, bevel=0.035)]
+    head.append(ico("Mouth_Shadow", (0, -1.165, 1.53), (0.28, 0.07, 0.10), tail_mat))
+    for side in (-1, 1):
+        head.append(cube(f"Incisor_{'L' if side == 1 else 'R'}", (0.116 * side, -1.225, 1.475 - (0.012 if side == -1 else 0)), (0.205, 0.13, 0.35), tooth, rotation=(R(-6), 0, R(-3 * side)), bevel=0.026))
+    jaw = [ico("Lower_Jaw", (0, -0.99, 1.41), (0.4, 0.19, 0.16), cream)]
     arms_l = [ico("Forepaw_L", (0.62, -0.7, 1.02), (0.24, 0.22, 0.52), warm, rotation=(R(-16), 0, R(-18)), subdivisions=1)]
     arms_r = [ico("Forepaw_R", (-0.62, -0.7, 1.02), (0.24, 0.22, 0.52), warm, rotation=(R(-16), 0, R(18)), subdivisions=1)]
-    tail = [ico("Beaver_Tail", (0, 0.95, 0.55), (0.58, 0.18, 0.95), tail_mat, rotation=(R(20), 0, 0), subdivisions=2)]
-    for z in (0.25, 0.55, 0.85):
-        tail.append(cylinder(f"Tail_Ridge_{z}", (0, 0.78 + z * 0.18, z), 0.035, 0.88, warm, rotation=(0, R(90), 0), vertices=6))
+    paddle_center, paddle_radii, paddle_rotation = (0, 1.4, 0.265), (0.64, 0.98, 0.13), (R(8), 0, 0)
+    tail = [
+        ico("Tail_Base", (0, 0.73, 0.36), (0.31, 0.5, 0.15), tail_mat, rotation=paddle_rotation),
+        ico("Beaver_Tail", paddle_center, paddle_radii, tail_mat, rotation=paddle_rotation, subdivisions=3),
+        ellipsoid_hatching("Tail_Scale_Seams", paddle_center, paddle_radii, tail_seam, rotation=paddle_rotation),
+    ]
     attach(body, rig, "body"); attach(head, rig, "head"); attach(jaw, rig, "jaw"); attach(arms_l, rig, "arm.L"); attach(arms_r, rig, "arm.R"); attach(tail, rig, "tail")
     idle = create_action(rig, "Idle", [(1, {"tail": {"rotation": (0, 0, R(-4))}}), (28, {"root": {"location": (0, 0, 0.035)}, "body": {"scale": (1.015, 1.015, 1.03)}, "head": {"rotation": (R(2), 0, R(4))}, "tail": {"rotation": (0, 0, R(7))}}), (56, {"tail": {"rotation": (0, 0, R(-4))}}), (84, {"root": {"location": (0, 0, 0.025)}, "head": {"rotation": (R(-2), 0, R(-5))}, "tail": {"rotation": (0, 0, R(4))}}), (104, {"tail": {"rotation": (0, 0, R(-4))}})])
     gnaw = create_action(rig, "Gnaw", [(1, {}), (5, {"jaw": {"rotation": (R(12), 0, 0)}, "arm.L": {"rotation": (0, R(-8), R(-8))}, "arm.R": {"rotation": (0, R(8), R(8))}}), (10, {"jaw": {"rotation": (R(-3), 0, 0)}}), (15, {"jaw": {"rotation": (R(13), 0, 0)}}), (20, {}), (25, {"jaw": {"rotation": (R(11), 0, 0)}}), (32, {})])
