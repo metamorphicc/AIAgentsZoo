@@ -26,9 +26,10 @@ export async function createOpenAIDecision({
     throw new Error("OPENAI_API_KEY is not configured");
   }
 
-  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout: 20_000, maxRetries: 0 });
   const response = await client.responses.parse({
     model: process.env.OPENAI_MODEL ?? "gpt-6-luna",
+    max_output_tokens: 1200,
     input: [
       {
         role: "system",

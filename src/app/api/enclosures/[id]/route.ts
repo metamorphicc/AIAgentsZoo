@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { readJsonBody } from "@/lib/auth/json-body";
 
 import { guardMutation } from "@/lib/auth/mutation";
 import { assignEnclosureHead, getEnclosure } from "@/lib/zoo-store";
@@ -20,7 +21,7 @@ export async function GET(_request: Request, context: EnclosureRouteContext) {
 export async function PATCH(request: Request, context: EnclosureRouteContext) {
   const auth = await guardMutation(request, { scope: "assign-enclosure-agent", limit: 20, windowMs: 60_000 });
   if ("response" in auth) return auth.response;
-  const parsed = assignmentSchema.safeParse(await request.json().catch(() => null));
+  const parsed = assignmentSchema.safeParse(await readJsonBody(request));
   if (!parsed.success) return Response.json({ error: "Agent assignment is invalid" }, { status: 400 });
   const { id } = await context.params;
 

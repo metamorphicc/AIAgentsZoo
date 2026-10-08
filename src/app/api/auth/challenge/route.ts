@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { readJsonBody } from "@/lib/auth/json-body";
 
 import { createWalletChallenge } from "@/lib/auth/siwe";
 import { forbiddenOriginResponse, isSameOrigin, requestFingerprint, requestOrigin } from "@/lib/auth/request";
@@ -23,7 +24,7 @@ export async function POST(request: Request) {
   });
   if (!rate.allowed) return rateLimitResponse(rate.retryAfterSeconds);
 
-  const parsed = challengeSchema.safeParse(await request.json().catch(() => null));
+  const parsed = challengeSchema.safeParse(await readJsonBody(request));
   if (!parsed.success) {
     return Response.json({ error: "Wallet address or chain is invalid." }, { status: 400 });
   }

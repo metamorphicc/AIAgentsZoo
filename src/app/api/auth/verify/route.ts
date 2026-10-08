@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { readJsonBody } from "@/lib/auth/json-body";
 
 import { requestFingerprint, forbiddenOriginResponse, isSameOrigin, requestOrigin } from "@/lib/auth/request";
 import { checkRateLimit, rateLimitResponse } from "@/lib/auth/rate-limit";
@@ -24,7 +25,7 @@ export async function POST(request: Request) {
   });
   if (!rate.allowed) return rateLimitResponse(rate.retryAfterSeconds);
 
-  const parsed = verifySchema.safeParse(await request.json().catch(() => null));
+  const parsed = verifySchema.safeParse(await readJsonBody(request));
   if (!parsed.success) {
     return Response.json({ error: "The wallet signature payload is invalid." }, { status: 400 });
   }

@@ -5,6 +5,8 @@ import { dirname } from "node:path";
 import { createClient, type Client, type InStatement, type Row } from "@libsql/client";
 
 import { getDatabasePath } from "@/lib/database-path";
+import { cycleLimit, launchLimits } from "@/lib/launch-limits";
+import { isPublicEndpoint } from "@/lib/public-endpoint";
 import { initialAgents, species } from "@/lib/zoo/species";
 import type {
   Agent,
@@ -45,19 +47,20 @@ if (process.env.NODE_ENV !== "production") globalStore.zooStoreClient = zooStore
 const defaultEnclosure = {
   id: "habitat-01",
   name: "Habitat 01",
-  description: "The founding enclosure for Grok's four autonomous species.",
+  description: "The founding enclosure for four specialist species under the Grok head profile.",
   territory: "Shared local event ledger",
   headAgentId: "grok-orchestrator",
   createdAt: "2026-10-04T00:00:00.000Z",
 };
 
 const defaultControlAgent: ControlAgent = {
+  hidden: false,
   id: "grok-orchestrator",
   name: "Grok",
   provider: "grok",
   model: "Grok",
   role: "Head orchestrator",
-  description: "Routes intent across the founding habitat and coordinates its four specialist pets.",
+  description: "The head profile for the founding habitat: scout, build, archive, and watch.",
   endpointUrl: null,
   ownerAddress: null,
   createdAt: "2026-10-04T00:00:00.000Z",
@@ -67,7 +70,7 @@ function value(row: Row, key: string) {
   return row[key];
 }
 
-async function ensureColumn(table: "agents" | "enclosures", column: string, definition: string) {
+async function ensureColumn(table: "agents" | "enclosures" | "control_agents", column: string, definition: string) {
   const columns = await zooStore.execute(`PRAGMA table_info(${table})`);
   if (columns.rows.some((row) => String(value(row, "name")) === column)) return;
   try {
@@ -100,13 +103,14 @@ function mapAgent(row: Row): Agent {
 
 function mapControlAgent(row: Row): ControlAgent {
   return {
+    hidden: Boolean(Number(value(row, "hidden") ?? 0)),
     id: String(value(row, "id")),
     name: String(value(row, "name")),
     provider: String(value(row, "provider")) as ControlAgentProvider,
     model: String(value(row, "model")),
     role: String(value(row, "role")),
     description: String(value(row, "description")),
-    endpointUrl: value(row, "endpoint_url") ? String(value(row, "endpoint_url")) : null,
+    endpointUrl: value(row, "endpoint_url") && isPublicEndpoint(String(value(row, "endpoint_url"))) ? String(value(row, "endpoint_url")) : null,
     ownerAddress: value(row, "owner_address") ? String(value(row, "owner_address")) : null,
     createdAt: String(value(row, "created_at")),
   };
@@ -150,6 +154,7 @@ function mapArtifact(row: Row): Artifact {
 
 function mapEnclosure(row: Row): Enclosure {
   return {
+    hidden: Boolean(Number(value(row, "hidden") ?? 0)),
     id: String(value(row, "id")),
     name: String(value(row, "name")),
     description: String(value(row, "description")),
@@ -257,6 +262,12 @@ async function initializeStore() {
       updated_by TEXT,
       updated_at TEXT
     )`,
+    `CREATE TABLE IF NOT EXISTS habitat_runs (
+      id TEXT PRIMARY KEY, enclosure_id TEXT NOT NULL REFERENCES enclosures(id),
+      task TEXT NOT NULL, status TEXT NOT NULL, created_at TEXT NOT NULL, completed_at TEXT
+    )`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS habitat_running_idx ON habitat_runs(enclosure_id) WHERE status = 'running'`,
+    `CREATE INDEX IF NOT EXISTS runs_created_idx ON agent_runs(created_at)`,
     `CREATE INDEX IF NOT EXISTS events_agent_created_idx ON events(agent_id, created_at DESC)`,
     `CREATE INDEX IF NOT EXISTS runs_agent_created_idx ON agent_runs(agent_id, created_at DESC)`,
   ];
@@ -268,6 +279,8 @@ async function initializeStore() {
   await ensureColumn("agents", "owner_address", "owner_address TEXT");
   await ensureColumn("enclosures", "head_agent_id", "head_agent_id TEXT");
   await ensureColumn("enclosures", "owner_address", "owner_address TEXT");
+  await ensureColumn("enclosures", "hidden", "hidden INTEGER NOT NULL DEFAULT 0");
+  await ensureColumn("control_agents", "hidden", "hidden INTEGER NOT NULL DEFAULT 0");
   await zooStore.execute("CREATE INDEX IF NOT EXISTS agents_enclosure_idx ON agents(enclosure_id, created_at)");
   await zooStore.execute("CREATE INDEX IF NOT EXISTS agents_owner_idx ON agents(owner_address, created_at)");
   await zooStore.execute("CREATE INDEX IF NOT EXISTS agents_control_agent_idx ON agents(control_agent_id, created_at)");
@@ -299,6 +312,10 @@ async function initializeStore() {
       VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO NOTHING`,
     args: [defaultEnclosure.id, defaultEnclosure.name, defaultEnclosure.description, defaultEnclosure.territory, defaultEnclosure.headAgentId, defaultEnclosure.createdAt],
   });
+  await zooStore.batch([
+    { sql: "UPDATE control_agents SET description = ? WHERE id = ? AND owner_address IS NULL", args: [defaultControlAgent.description, defaultControlAgent.id] },
+    { sql: "UPDATE enclosures SET description = ? WHERE id = ? AND owner_address IS NULL", args: [defaultEnclosure.description, defaultEnclosure.id] },
+  ], "write");
 
   const agentHierarchyMigration = await zooStore.execute("SELECT value FROM app_metadata WHERE key = 'agent_hierarchy_v1'");
   if (agentHierarchyMigration.rows[0]?.value !== "done") {
@@ -323,14 +340,9 @@ async function initializeStore() {
 
   const locale = await zooStore.execute("SELECT value FROM app_metadata WHERE key = 'content_locale'");
   if (locale.rows[0]?.value !== "en-v2") {
-    await zooStore.batch([
-      "DELETE FROM artifacts",
-      "DELETE FROM events",
-      "DELETE FROM agent_runs",
-      "UPDATE agents SET status = 'sleeping', feed = feed_max, last_awake_at = NULL",
-      `INSERT INTO app_metadata (key, value) VALUES ('content_locale', 'en-v2')
-        ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
-    ], "write");
+    // Content migrations must never erase existing public history.
+    await zooStore.execute(`INSERT INTO app_metadata (key, value) VALUES ('content_locale', 'en-v2')
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value`);
   }
 
   const seedStatements: InStatement[] = initialAgents.map((agent) => ({
@@ -376,27 +388,54 @@ export async function ensureZooStoreReady() {
   await ready();
 }
 
+export async function claimHabitatRun(id: string, enclosureId: string, task: string) {
+  await ready();
+  const transaction = await zooStore.transaction("write");
+  try {
+    const now = new Date().toISOString();
+    const staleBefore = new Date(Date.now() - 180_000).toISOString();
+    // A terminated serverless invocation cannot hold a habitat forever.
+    await transaction.execute({ sql: "UPDATE habitat_runs SET status = 'failed', completed_at = ? WHERE status = 'running' AND created_at < ?", args: [now, staleBefore] });
+    await transaction.execute({ sql: "UPDATE agent_runs SET status = 'failed', error = 'Cycle timed out', completed_at = ? WHERE status = 'running' AND created_at < ?", args: [now, staleBefore] });
+    await transaction.execute({ sql: "UPDATE agents SET status = 'sleeping' WHERE status = 'working' AND last_awake_at < ?", args: [staleBefore] });
+    const existing = await transaction.execute({ sql: "SELECT id FROM habitat_runs WHERE id = ? OR (enclosure_id = ? AND status = 'running')", args: [id, enclosureId] });
+    if (existing.rows.length) throw new Error("HABITAT_BUSY");
+    await transaction.execute({ sql: "INSERT INTO habitat_runs (id, enclosure_id, task, status, created_at) VALUES (?, ?, ?, 'running', ?)", args: [id, enclosureId, task, now] });
+    await transaction.commit();
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
+  } finally {
+    transaction.close();
+  }
+}
+
+export async function finishHabitatRun(id: string, status: "completed" | "failed") {
+  await ready();
+  await zooStore.execute({ sql: "UPDATE habitat_runs SET status = ?, completed_at = ? WHERE id = ? AND status = 'running'", args: [status, new Date().toISOString(), id] });
+}
+
 export async function getAgents(): Promise<Agent[]> {
   await ready();
-  const result = await zooStore.execute("SELECT * FROM agents ORDER BY created_at, id");
+  const result = await zooStore.execute("SELECT a.* FROM agents a JOIN enclosures e ON e.id = a.enclosure_id WHERE e.hidden = 0 ORDER BY a.created_at, a.id");
   return result.rows.map(mapAgent);
 }
 
 export async function getAgent(id: string): Promise<Agent | null> {
   await ready();
-  const result = await zooStore.execute({ sql: "SELECT * FROM agents WHERE id = ?", args: [id] });
+  const result = await zooStore.execute({ sql: "SELECT a.* FROM agents a JOIN enclosures e ON e.id = a.enclosure_id WHERE a.id = ? AND e.hidden = 0", args: [id] });
   return result.rows[0] ? mapAgent(result.rows[0]) : null;
 }
 
-export async function getControlAgents(): Promise<ControlAgent[]> {
+export async function getControlAgents(includeHidden = false): Promise<ControlAgent[]> {
   await ready();
-  const result = await zooStore.execute("SELECT * FROM control_agents ORDER BY created_at, name");
+  const result = await zooStore.execute({ sql: "SELECT * FROM control_agents WHERE hidden = 0 OR ? = 1 ORDER BY created_at, name", args: [Number(includeHidden)] });
   return result.rows.map(mapControlAgent);
 }
 
 export async function getControlAgent(id: string): Promise<ControlAgent | null> {
   await ready();
-  const result = await zooStore.execute({ sql: "SELECT * FROM control_agents WHERE id = ?", args: [id] });
+  const result = await zooStore.execute({ sql: "SELECT * FROM control_agents WHERE id = ? AND hidden = 0", args: [id] });
   return result.rows[0] ? mapControlAgent(result.rows[0]) : null;
 }
 
@@ -412,12 +451,16 @@ export async function createControlAgent(input: {
   await ready();
   const id = `operator-${randomUUID().slice(0, 8)}`;
   const createdAt = new Date().toISOString();
-  await zooStore.execute({
+  const inserted = await zooStore.execute({
     sql: `INSERT INTO control_agents (
       id, name, provider, model, role, description, endpoint_url, owner_address, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    args: [id, input.name, input.provider, input.model, input.role, input.description, input.endpointUrl || null, input.ownerAddress, createdAt],
+    ) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?
+      WHERE (SELECT COUNT(*) FROM control_agents WHERE lower(owner_address) = lower(?)) < ?
+        AND (SELECT COUNT(*) FROM control_agents) < ?`,
+    args: [id, input.name, input.provider, input.model, input.role, input.description, input.endpointUrl || null, input.ownerAddress, createdAt,
+      input.ownerAddress, launchLimits.controlAgentsPerWallet, launchLimits.controlAgentsTotal],
   });
+  if (!inserted.rowsAffected) throw new Error("RESOURCE_LIMIT");
   return (await getControlAgent(id))!;
 }
 
@@ -430,17 +473,18 @@ async function assertControlAgentAccess(id: string | null | undefined, ownerAddr
   }
 }
 
-export async function getEnclosures(): Promise<Enclosure[]> {
+export async function getEnclosures(includeHidden = false): Promise<Enclosure[]> {
   await ready();
-  const result = await zooStore.execute(`
+  const result = await zooStore.execute({ sql: `
     SELECT e.*, COUNT(a.id) AS agent_count,
       COALESCE(SUM(a.feed), 0) AS feed,
       COALESCE(SUM(a.feed_max), 0) AS feed_max
     FROM enclosures e
     LEFT JOIN agents a ON a.enclosure_id = e.id
+    WHERE e.hidden = 0 OR ? = 1
     GROUP BY e.id
     ORDER BY e.created_at, e.name
-  `);
+  `, args: [Number(includeHidden)] });
   return result.rows.map(mapEnclosure);
 }
 
@@ -451,7 +495,7 @@ export async function getEnclosure(id: string): Promise<Enclosure | null> {
       COALESCE(SUM(a.feed), 0) AS feed,
       COALESCE(SUM(a.feed_max), 0) AS feed_max
       FROM enclosures e LEFT JOIN agents a ON a.enclosure_id = e.id
-      WHERE e.id = ? GROUP BY e.id`,
+      WHERE e.id = ? AND e.hidden = 0 GROUP BY e.id`,
     args: [id],
   });
   return result.rows[0] ? mapEnclosure(result.rows[0]) : null;
@@ -460,7 +504,7 @@ export async function getEnclosure(id: string): Promise<Enclosure | null> {
 export async function getEnclosureAgents(enclosureId: string): Promise<Agent[]> {
   await ready();
   const result = await zooStore.execute({
-    sql: "SELECT * FROM agents WHERE enclosure_id = ? ORDER BY created_at, id",
+    sql: "SELECT a.* FROM agents a JOIN enclosures e ON e.id = a.enclosure_id WHERE enclosure_id = ? AND e.hidden = 0 ORDER BY a.created_at, a.id",
     args: [enclosureId],
   });
   return result.rows.map(mapAgent);
@@ -478,10 +522,15 @@ export async function createEnclosure(input: {
   await assertControlAgentAccess(input.headAgentId, input.ownerAddress, input.allowSystemAgent);
   const id = `enclosure-${randomUUID().slice(0, 8)}`;
   const createdAt = new Date().toISOString();
-  await zooStore.execute({
-    sql: "INSERT INTO enclosures (id, name, description, territory, head_agent_id, owner_address, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-    args: [id, input.name, input.description, input.territory, input.headAgentId || null, input.ownerAddress, createdAt],
+  const inserted = await zooStore.execute({
+    sql: `INSERT INTO enclosures (id, name, description, territory, head_agent_id, owner_address, created_at)
+      SELECT ?, ?, ?, ?, ?, ?, ?
+      WHERE (SELECT COUNT(*) FROM enclosures WHERE lower(owner_address) = lower(?)) < ?
+        AND (SELECT COUNT(*) FROM enclosures) < ?`,
+    args: [id, input.name, input.description, input.territory, input.headAgentId || null, input.ownerAddress, createdAt,
+      input.ownerAddress, launchLimits.enclosuresPerWallet, launchLimits.enclosuresTotal],
   });
+  if (!inserted.rowsAffected) throw new Error("RESOURCE_LIMIT");
   return (await getEnclosure(id))!;
 }
 
@@ -520,7 +569,7 @@ export async function createAgent(input: {
   await ready();
   const enclosure = await getEnclosure(input.enclosureId);
   if (!enclosure) throw new Error("ENCLOSURE_NOT_FOUND");
-  if (enclosure.ownerAddress !== input.ownerAddress && !input.allowSystemEnclosure) {
+  if (enclosure.ownerAddress?.toLowerCase() !== input.ownerAddress.toLowerCase() && !input.allowSystemEnclosure) {
     throw new Error("ENCLOSURE_FORBIDDEN");
   }
   await assertControlAgentAccess(input.controlAgentId, input.ownerAddress, input.allowSystemEnclosure);
@@ -528,11 +577,14 @@ export async function createAgent(input: {
   const blueprint = species[input.species];
   const id = `${input.species}-${randomUUID().slice(0, 8)}`;
   const createdAt = new Date().toISOString();
-  await zooStore.execute({
+  const inserted = await zooStore.execute({
     sql: `INSERT INTO agents (
       id, name, species, emoji, role, description, status, feed, feed_max,
       enclosure_id, control_agent_id, owner_address, task, last_awake_at, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, 'sleeping', ?, ?, ?, ?, ?, ?, NULL, ?)`,
+    ) SELECT ?, ?, ?, ?, ?, ?, 'sleeping', ?, ?, ?, ?, ?, ?, NULL, ?
+      WHERE (SELECT COUNT(*) FROM agents WHERE lower(owner_address) = lower(?)) < ?
+        AND (SELECT COUNT(*) FROM agents WHERE enclosure_id = ?) < ?
+        AND (SELECT COUNT(*) FROM agents) < ?`,
     args: [
       id,
       input.name,
@@ -547,8 +599,11 @@ export async function createAgent(input: {
       input.ownerAddress,
       input.task || blueprint.defaultTask,
       createdAt,
+      input.ownerAddress, launchLimits.animalsPerWallet,
+      input.enclosureId, launchLimits.animalsPerEnclosure, launchLimits.animalsTotal,
     ],
   });
+  if (!inserted.rowsAffected) throw new Error("RESOURCE_LIMIT");
   return (await getAgent(id))!;
 }
 
@@ -575,10 +630,39 @@ export async function assignAnimalControlAgent(input: {
 export async function getRecentEvents(limit = 20): Promise<ZooEvent[]> {
   await ready();
   const result = await zooStore.execute({
-    sql: "SELECT * FROM events ORDER BY created_at DESC LIMIT ?",
+    sql: "SELECT v.* FROM events v JOIN agents a ON a.id = v.agent_id JOIN enclosures e ON e.id = a.enclosure_id WHERE e.hidden = 0 ORDER BY v.created_at DESC, v.rowid DESC LIMIT ?",
     args: [limit],
   });
   return result.rows.map(mapEvent);
+}
+
+export async function getEnclosureEvents(enclosureId: string, limit = 50): Promise<ZooEvent[]> {
+  await ready();
+  const result = await zooStore.execute({
+    sql: `SELECT e.* FROM events e JOIN agents a ON a.id = e.agent_id JOIN enclosures h ON h.id = a.enclosure_id
+      WHERE a.enclosure_id = ? AND h.hidden = 0 ORDER BY e.created_at DESC, e.rowid DESC LIMIT ?`,
+    args: [enclosureId, Math.max(1, Math.min(limit, 100))],
+  });
+  return result.rows.map(mapEvent);
+}
+
+export async function getIncomingSignals(agentId: string, since?: string): Promise<ZooEvent[]> {
+  await ready();
+  const result = await zooStore.execute({
+    sql: `SELECT * FROM events WHERE target_agent_id = ? AND type IN ('request', 'sighting')
+      AND created_at > ? ORDER BY created_at DESC, rowid DESC LIMIT 10`,
+    args: [agentId, since ?? ""],
+  });
+  return result.rows.map(mapEvent);
+}
+
+export async function getAgentArtifacts(agentId: string, limit = 10): Promise<Artifact[]> {
+  await ready();
+  const result = await zooStore.execute({
+    sql: "SELECT * FROM artifacts WHERE agent_id = ? ORDER BY created_at DESC, rowid DESC LIMIT ?",
+    args: [agentId, Math.max(1, Math.min(limit, 100))],
+  });
+  return result.rows.map(mapArtifact);
 }
 
 export async function getAgentEvents(agentId: string, limit = 50): Promise<ZooEvent[]> {
@@ -602,7 +686,7 @@ export async function getAgentRuns(agentId: string, limit = 20): Promise<AgentRu
 export async function getArtifacts(limit = 20): Promise<Artifact[]> {
   await ready();
   const result = await zooStore.execute({
-    sql: "SELECT * FROM artifacts ORDER BY created_at DESC LIMIT ?",
+    sql: "SELECT v.* FROM artifacts v JOIN agents a ON a.id = v.agent_id JOIN enclosures e ON e.id = a.enclosure_id WHERE e.hidden = 0 ORDER BY v.created_at DESC, v.rowid DESC LIMIT ?",
     args: [limit],
   });
   return result.rows.map(mapArtifact);
@@ -610,7 +694,7 @@ export async function getArtifacts(limit = 20): Promise<Artifact[]> {
 
 export async function getArtifact(id: string): Promise<Artifact | null> {
   await ready();
-  const result = await zooStore.execute({ sql: "SELECT * FROM artifacts WHERE id = ?", args: [id] });
+  const result = await zooStore.execute({ sql: "SELECT v.* FROM artifacts v JOIN agents a ON a.id = v.agent_id JOIN enclosures e ON e.id = a.enclosure_id WHERE v.id = ? AND e.hidden = 0", args: [id] });
   return result.rows[0] ? mapArtifact(result.rows[0]) : null;
 }
 
@@ -681,6 +765,7 @@ export async function sendSignal(input: {
 export async function refillAgent(agentId: string): Promise<Agent | null> {
   const agent = await getAgent(agentId);
   if (!agent) return null;
+  if (agent.feed >= agent.feedMax) return agent;
   const eventId = randomUUID();
   const createdAt = new Date().toISOString();
   await zooStore.batch([
@@ -696,10 +781,11 @@ export async function refillAgent(agentId: string): Promise<Agent | null> {
 
 export async function refillEnclosure(enclosureId: string): Promise<Agent[]> {
   const agents = await getEnclosureAgents(enclosureId);
-  if (agents.length === 0) return [];
+  const depleted = agents.filter((agent) => agent.feed < agent.feedMax);
+  if (depleted.length === 0) return agents;
   const createdAt = new Date().toISOString();
   const statements: InStatement[] = [];
-  for (const agent of agents) {
+  for (const agent of depleted) {
     statements.push({ sql: "UPDATE agents SET feed = feed_max WHERE id = ?", args: [agent.id] });
     statements.push({
       sql: `INSERT INTO events (id, agent_id, target_agent_id, type, summary, payload_json, created_at)
@@ -717,13 +803,34 @@ export async function startAgentRun(input: {
   provider: AgentRun["provider"];
   task: string;
   createdAt: string;
+  habitatRunId?: string;
 }): Promise<AgentRun> {
   await ready();
   const transaction = await zooStore.transaction("write");
   try {
+    const dayStart = `${input.createdAt.slice(0, 10)}T00:00:00.000Z`;
+    const hourStart = `${input.createdAt.slice(0, 13)}:00:00.000Z`;
+    const staleBefore = new Date(Date.now() - 180_000).toISOString();
+    const activeHabitat = await transaction.execute({ sql: `SELECT id FROM habitat_runs WHERE enclosure_id = (SELECT enclosure_id FROM agents WHERE id = ?) AND status = 'running' AND created_at >= ?`, args: [input.agentId, staleBefore] });
+    if (activeHabitat.rows[0] && String(activeHabitat.rows[0].id) !== input.habitatRunId) throw new Error("HABITAT_BUSY");
+    await transaction.execute({ sql: "UPDATE agent_runs SET status = 'failed', error = 'Cycle timed out', completed_at = ? WHERE agent_id = ? AND status = 'running' AND created_at < ?", args: [input.createdAt, input.agentId, staleBefore] });
+    await transaction.execute({ sql: "UPDATE agents SET status = 'sleeping' WHERE id = ? AND status = 'working' AND last_awake_at < ?", args: [input.agentId, staleBefore] });
+    const counts = await transaction.execute({
+      sql: `SELECT COUNT(*) AS daily, SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END) AS hourly,
+        SUM(CASE WHEN agent_id IN (SELECT id FROM agents WHERE enclosure_id =
+          (SELECT enclosure_id FROM agents WHERE id = ?)) THEN 1 ELSE 0 END) AS enclosure_daily
+        FROM agent_runs WHERE created_at >= ?`,
+      args: [hourStart, input.agentId, dayStart],
+    });
+    const count = counts.rows[0];
+    if (Number(count.daily) >= cycleLimit("RUNTIME_DAILY_CYCLE_LIMIT", 500)
+      || Number(count.hourly) >= cycleLimit("RUNTIME_HOURLY_CYCLE_LIMIT", 100)
+      || Number(count.enclosure_daily) >= cycleLimit("ENCLOSURE_DAILY_CYCLE_LIMIT", 120)) {
+      throw new Error("CYCLE_LIMIT");
+    }
     const result = await transaction.execute({
       sql: `UPDATE agents SET status = 'working', feed = feed - 1, last_awake_at = ?
-        WHERE id = ? AND status = 'sleeping' AND feed > 0`,
+        WHERE id = ? AND status IN ('sleeping', 'error') AND feed > 0`,
       args: [input.createdAt, input.agentId],
     });
 
@@ -946,4 +1053,21 @@ export async function setRuntimePaused(paused: boolean, updatedBy: string): Prom
     args: [paused ? "true" : "false", updatedBy, updatedAt],
   });
   return { paused, updatedBy, updatedAt };
+}
+
+export async function setResourceVisibility(kind: "enclosure" | "control-agent", id: string, hidden: boolean, updatedBy: string) {
+  await ready();
+  const table = kind === "enclosure" ? "enclosures" : "control_agents";
+  const transaction = await zooStore.transaction("write");
+  try {
+    const result = await transaction.execute({ sql: `UPDATE ${table} SET hidden = ? WHERE id = ? AND owner_address IS NOT NULL`, args: [Number(hidden), id] });
+    if (!result.rowsAffected) throw new Error("RESOURCE_NOT_FOUND");
+    await transaction.execute({ sql: `INSERT INTO runtime_controls (control_key, value, updated_by, updated_at) VALUES (?, ?, ?, ?)
+      ON CONFLICT(control_key) DO UPDATE SET value = excluded.value, updated_by = excluded.updated_by, updated_at = excluded.updated_at`,
+    args: [`visibility:${kind}:${id}`, hidden ? "hidden" : "public", updatedBy, new Date().toISOString()] });
+    await transaction.commit();
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
+  } finally { transaction.close(); }
 }

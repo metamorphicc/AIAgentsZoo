@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { readJsonBody } from "@/lib/auth/json-body";
+import { quotaError } from "@/lib/launch-limits";
 
 import { guardMutation } from "@/lib/auth/mutation";
 import { createEnclosure, getEnclosures } from "@/lib/zoo-store";
@@ -17,7 +19,7 @@ export async function GET() {
 export async function POST(request: Request) {
   const auth = await guardMutation(request, { scope: "create-enclosure", limit: 5, windowMs: 60 * 60 * 1000 });
   if ("response" in auth) return auth.response;
-  const parsed = createEnclosureSchema.safeParse(await request.json().catch(() => null));
+  const parsed = createEnclosureSchema.safeParse(await readJsonBody(request));
   if (!parsed.success) {
     return Response.json({ error: "Enclosure input is invalid", details: parsed.error.flatten() }, { status: 400 });
   }
@@ -31,6 +33,7 @@ export async function POST(request: Request) {
     return Response.json({ enclosure }, { status: 201 });
   } catch (error) {
     const code = error instanceof Error ? error.message : "UNKNOWN";
+    if (code === "RESOURCE_LIMIT") return Response.json({ error: quotaError }, { status: 409 });
     if (code === "CONTROL_AGENT_NOT_FOUND") return Response.json({ error: "AI agent not found" }, { status: 404 });
     if (code === "CONTROL_AGENT_FORBIDDEN") return Response.json({ error: "This wallet does not own that AI agent" }, { status: 403 });
     return Response.json({ error: "The enclosure could not be created" }, { status: 500 });
