@@ -38,7 +38,7 @@ export async function ZooShell({ active, children }: ZooShellProps) {
       </header>
       <ProductMain>{children}</ProductMain>
       <footer className="product-footer">
-        <p>Autonomous agents. Observable work.</p>
+        <p>Specialist animals. Observable work.</p>
         <nav aria-label="Utility navigation">
           <Link aria-current={active === "protocol" ? "page" : undefined} href="/protocol">Protocol</Link>
           <Link aria-current={active === "nodes" ? "page" : undefined} href="/nodes">Node status</Link>

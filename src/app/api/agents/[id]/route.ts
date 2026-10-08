@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { readJsonBody } from "@/lib/auth/json-body";
 
 import { guardMutation } from "@/lib/auth/mutation";
 import { assignAnimalControlAgent, getAgent, getAgentEvents, getAgentRuns } from "@/lib/zoo-store";
@@ -29,7 +30,7 @@ const assignmentSchema = z.object({
 export async function PATCH(request: Request, { params }: RouteContext) {
   const auth = await guardMutation(request, { scope: "assign-animal-agent", limit: 30, windowMs: 60_000 });
   if ("response" in auth) return auth.response;
-  const parsed = assignmentSchema.safeParse(await request.json().catch(() => null));
+  const parsed = assignmentSchema.safeParse(await readJsonBody(request));
   if (!parsed.success) return Response.json({ error: "Agent assignment is invalid" }, { status: 400 });
   const { id } = await params;
 

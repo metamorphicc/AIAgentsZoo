@@ -14,7 +14,7 @@ export async function GET() {
         ok: true,
         storage: storageMode,
         durable,
-        provider: process.env.AGENT_PROVIDER === "openai" ? "openai" : "demo",
+        provider: process.env.AGENT_PROVIDER === "openai" ? "openai" : "local",
         agents: agents.length,
         enclosures: enclosures.length,
         runtimePaused: runtime.paused,
@@ -23,9 +23,9 @@ export async function GET() {
       },
       { status: durable ? 200 : 206 },
     );
-  } catch (error) {
+  } catch {
     return NextResponse.json(
-      { ok: false, error: error instanceof Error ? error.message : "Health check failed" },
+      { ok: false, error: "Storage health check failed" },
       { status: 503 },
     );
   }

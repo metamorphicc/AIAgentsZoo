@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { readJsonBody } from "@/lib/auth/json-body";
 
 import { canManageResource } from "@/lib/auth/authorization";
 import { guardMutation } from "@/lib/auth/mutation";
@@ -22,18 +23,7 @@ export async function POST(request: Request, { params }: RouteContext) {
   if (!agent) return Response.json({ error: "Agent not found" }, { status: 404 });
   if (!canManageResource(auth.session, agent.ownerAddress)) return forbiddenResponse();
 
-  let body: unknown = {};
-  const rawBody = await request.text();
-
-  if (rawBody) {
-    try {
-      body = JSON.parse(rawBody);
-    } catch {
-      return Response.json({ error: "Request body must be valid JSON" }, { status: 400 });
-    }
-  }
-
-  const parsed = wakeRequestSchema.safeParse(body);
+  const parsed = wakeRequestSchema.safeParse(await readJsonBody(request));
 
   if (!parsed.success) {
     return Response.json(

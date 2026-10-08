@@ -11,13 +11,17 @@ export async function guardMutation(request: Request, input: {
   const session = await getSession();
   if (!session) return { response: authRequiredResponse() } as const;
 
-  const rate = await checkRateLimit({
-    key: `${session.address.toLowerCase()}:${requestFingerprint(request)}`,
-    scope: input.scope,
-    limit: input.limit ?? 20,
-    windowMs: input.windowMs ?? 60_000,
-  });
-  if (!rate.allowed) return { response: rateLimitResponse(rate.retryAfterSeconds) } as const;
+  const limit = input.limit ?? 20;
+  const windowMs = input.windowMs ?? 60_000;
+  // Wallet quotas survive IP changes; network and global quotas bound new-wallet spam.
+  for (const [key, multiplier] of [
+    ["global", 50],
+    [`network:${requestFingerprint(request)}`, 5],
+    [`wallet:${session.address.toLowerCase()}`, 1],
+  ] as const) {
+    const rate = await checkRateLimit({ key, scope: input.scope, limit: limit * multiplier, windowMs });
+    if (!rate.allowed) return { response: rateLimitResponse(rate.retryAfterSeconds) } as const;
+  }
 
   return { session } as const;
 }

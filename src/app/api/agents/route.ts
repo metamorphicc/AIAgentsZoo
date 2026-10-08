@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { readJsonBody } from "@/lib/auth/json-body";
+import { quotaError } from "@/lib/launch-limits";
 
 import { guardMutation } from "@/lib/auth/mutation";
 import { createAgent, getAgents } from "@/lib/zoo-store";
@@ -22,7 +24,7 @@ export async function GET() {
 export async function POST(request: Request) {
   const auth = await guardMutation(request, { scope: "create-agent", limit: 12, windowMs: 60 * 60 * 1000 });
   if ("response" in auth) return auth.response;
-  const parsed = createAgentSchema.safeParse(await request.json().catch(() => null));
+  const parsed = createAgentSchema.safeParse(await readJsonBody(request));
   if (!parsed.success) {
     return Response.json({ error: "Animal input is invalid", details: parsed.error.flatten() }, { status: 400 });
   }
@@ -36,6 +38,7 @@ export async function POST(request: Request) {
     });
     return Response.json({ agent }, { status: 201 });
   } catch (error) {
+    if (error instanceof Error && error.message === "RESOURCE_LIMIT") return Response.json({ error: quotaError }, { status: 409 });
     if (error instanceof Error && error.message === "ENCLOSURE_NOT_FOUND") {
       return Response.json({ error: "Enclosure not found" }, { status: 404 });
     }

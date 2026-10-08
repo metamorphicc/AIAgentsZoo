@@ -1,4 +1,4 @@
-"""Render two short Agent Zoo screen tours from the live site and a local test session.
+"""Render short Agent Zoo screen tours from the live site and a local test session.
 
 Requirements: playwright, opencv-python, imageio-ffmpeg, eth-account.
 Run the production build on http://localhost:3033 with an isolated local libSQL file
@@ -198,6 +198,30 @@ def smooth_tour(browser):
         context.close()
 
 
+def zoo_tour(browser):
+    """A standalone, cursor-free tour of the public Zoo dashboard."""
+    context = browser.new_context(viewport={"width": WIDTH, "height": HEIGHT}, device_scale_factor=1, reduced_motion="no-preference")
+    page = context.new_page()
+    video = Recorder("agentzoo-zoo-tour.mp4")
+    try:
+        page.goto(f"{LIVE}/zoo", wait_until="domcontentloaded", timeout=45000)
+        ready(page, ".operator-home")
+        page.wait_for_timeout(1200)
+        video.hold(page, 3.0)
+        video.scroll(page, 690, 3.4)
+        video.hold(page, 1.8)
+        video.scroll(page, 950, 2.4)
+        video.hold(page, 1.3)
+        video.scroll(page, 1310, 2.8)
+        video.hold(page, 1.4)
+        video.scroll(page, 1590, 2.8)
+        video.hold(page, 1.8)
+        video.title_card("EXPLORE THE ZOO", "Grok and four specialist pets · agentzoo.tech", 1.3)
+    finally:
+        video.finish()
+        context.close()
+
+
 def guided_tour(browser):
     account = Account.from_key(secrets.token_bytes(32))
     context = browser.new_context(viewport={"width": WIDTH, "height": HEIGHT}, device_scale_factor=1, reduced_motion="no-preference")
@@ -291,7 +315,7 @@ def guided_tour(browser):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--mode", choices=["smooth", "guided", "both"], default="both")
+    parser.add_argument("--mode", choices=["smooth", "guided", "zoo", "both"], default="both")
     args = parser.parse_args()
     chrome = Path("C:/Program Files/Google/Chrome/Application/chrome.exe")
     if not chrome.exists():
@@ -303,6 +327,8 @@ def main():
                 smooth_tour(browser)
             if args.mode in ("guided", "both"):
                 guided_tour(browser)
+            if args.mode == "zoo":
+                zoo_tour(browser)
         finally:
             browser.close()
 

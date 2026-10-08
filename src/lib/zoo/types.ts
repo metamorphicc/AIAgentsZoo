@@ -38,6 +38,7 @@ export type Agent = {
 };
 
 export type ControlAgent = {
+  hidden: boolean;
   id: string;
   name: string;
   provider: ControlAgentProvider;
@@ -50,6 +51,7 @@ export type ControlAgent = {
 };
 
 export type Enclosure = {
+  hidden: boolean;
   id: string;
   name: string;
   description: string;
@@ -90,7 +92,7 @@ export type AgentRun = {
   id: string;
   agentId: string;
   task: string;
-  provider: "demo" | "openai";
+  provider: "local" | "openai" | "demo";
   status: "running" | "completed" | "failed";
   summary: string | null;
   error: string | null;

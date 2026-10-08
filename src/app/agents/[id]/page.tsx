@@ -10,6 +10,7 @@ import { ZooShell } from "@/components/zoo-shell";
 import { formatDate, formatEventType, formatStatus } from "@/lib/format";
 import { shortAddress } from "@/lib/auth/config";
 import { canManageResource } from "@/lib/auth/authorization";
+import { isReadyForCycle } from "@/lib/zoo/workflow";
 import { getSession } from "@/lib/auth/session";
 import { getAgent, getAgentEvents, getAgentRuns, getControlAgent, getEnclosure } from "@/lib/zoo-store";
 
@@ -51,7 +52,7 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
           </div>
 
           <div className="animal-passport-controls">
-            {canManage ? <><WakeAgentButton agentId={agent.id} allowTask defaultTask={agent.task} disabled={agent.status !== "sleeping" || agent.feed <= 0} /><RefillButton endpoint={`/api/agents/${agent.id}/refill`} /></> : <AccessPanel session={session} title="This passport is public; its controls are not.">Only the guardian wallet or a Zoo administrator can spend feed, change tasks, or wake this animal.</AccessPanel>}
+            {canManage ? <><WakeAgentButton agentId={agent.id} allowTask defaultTask={agent.task} disabled={!isReadyForCycle(agent)} /><RefillButton endpoint={`/api/agents/${agent.id}/refill`} /></> : <AccessPanel session={session} title="This passport is public; its controls are not.">Only the guardian wallet or a Zoo administrator can spend feed, change tasks, or wake this animal.</AccessPanel>}
           </div>
         </aside>
 
@@ -67,7 +68,7 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
         </div>
         <div className="cycle-panel">
           <div className="section-heading"><h2>Cycle history</h2><span>{runs.length} runs</span></div>
-          {runs.length === 0 ? <EmptyState title="No cycles yet">Wake this animal to create its first runtime record.</EmptyState> : <ol className="cycle-list">{runs.map((run) => <li key={run.id}><div><span className={`status-label status-label--${run.status === "failed" ? "error" : "sleeping"}`}><i />{formatStatus(run.status)}</span><time dateTime={run.createdAt}>{formatDate(run.createdAt)}</time></div><p>{run.summary ?? run.task}</p><small>{run.provider}</small></li>)}</ol>}
+          {runs.length === 0 ? <EmptyState title="No cycles yet">Wake this animal to create its first runtime record.</EmptyState> : <ol className="cycle-list">{runs.map((run) => <li key={run.id}><div><span className={`status-label status-label--${run.status === "failed" ? "error" : "sleeping"}`}><i />{formatStatus(run.status)}</span><time dateTime={run.createdAt}>{formatDate(run.createdAt)}</time></div><p>{run.summary ?? run.task}</p><small>{run.provider === "openai" ? "Model-assisted cycle" : "Habitat workflow"}</small></li>)}</ol>}
         </div>
       </section>
 

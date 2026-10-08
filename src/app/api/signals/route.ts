@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { readJsonBody } from "@/lib/auth/json-body";
 
 import { canManageResource } from "@/lib/auth/authorization";
 import { guardMutation } from "@/lib/auth/mutation";
@@ -14,7 +15,7 @@ const signalSchema = z.object({
 export async function POST(request: Request) {
   const auth = await guardMutation(request, { scope: "publish-signal", limit: 30, windowMs: 60 * 60 * 1000 });
   if ("response" in auth) return auth.response;
-  const parsed = signalSchema.safeParse(await request.json().catch(() => null));
+  const parsed = signalSchema.safeParse(await readJsonBody(request));
   if (!parsed.success) {
     return Response.json({ error: "Signal input is invalid", details: parsed.error.flatten() }, { status: 400 });
   }

@@ -1,9 +1,10 @@
 import Link from "next/link";
 
-import { AgentMark } from "@/components/product-ui";
+import { HabitatWorkflow } from "@/components/habitat-workflow";
 import { ZooShell } from "@/components/zoo-shell";
-import { formatDate, formatEventType, formatStatus } from "@/lib/format";
+import { formatDate, formatEventType } from "@/lib/format";
 import { shortAddress } from "@/lib/auth/config";
+import { canManageResource } from "@/lib/auth/authorization";
 import { getSession } from "@/lib/auth/session";
 import { getAgents, getArtifacts, getControlAgents, getEnclosures, getRecentEvents, getRuntimeControl } from "@/lib/zoo-store";
 
@@ -22,17 +23,16 @@ export default async function ZooPage() {
   const agentNames = new Map(agents.map((agent) => [agent.id, agent.name]));
   const feed = agents.reduce((total, agent) => total + agent.feed, 0);
   const feedMax = agents.reduce((total, agent) => total + agent.feedMax, 0);
-  const liveSignal = events.find((event) => event.targetAgentId);
   const workingAgents = agents.filter((agent) => agent.status === "working").length;
   const sleepingAgents = agents.filter((agent) => agent.status === "sleeping").length;
   const lastEvent = events[0];
   const ownedHeadedEnclosure = session
-    ? enclosures.find((enclosure) => enclosure.ownerAddress?.toLowerCase() === session.address.toLowerCase() && enclosure.headAgentId)
+    ? enclosures.find((enclosure) => enclosure.ownerAddress?.toLowerCase() === session.address.toLowerCase() && enclosure.headAgentId) ?? enclosures.find((enclosure) => enclosure.ownerAddress?.toLowerCase() === session.address.toLowerCase())
     : null;
   const activeEnclosure = ownedHeadedEnclosure ?? enclosures.find((enclosure) => enclosure.id === "habitat-01") ?? enclosures[0];
-  const orchestrator = controlAgents.find((agent) => agent.id === activeEnclosure?.headAgentId) ?? controlAgents.find((agent) => agent.id === "grok-orchestrator");
-  const networkAgents = activeEnclosure ? agents.filter((agent) => agent.enclosureId === activeEnclosure.id).slice(0, 4) : [];
-  const orchestratorName = orchestrator?.name ?? "Unassigned";
+  const orchestrator = controlAgents.find((agent) => agent.id === activeEnclosure?.headAgentId);
+  const networkAgents = activeEnclosure ? agents.filter((agent) => agent.enclosureId === activeEnclosure.id) : [];
+  const orchestratorName = orchestrator?.name ?? "Habitat";
 
   return (
     <ZooShell active="zoo">
@@ -109,28 +109,7 @@ export default async function ZooPage() {
         </section>
 
       <section className="zoo-overview-grid">
-        <div className="network-panel">
-          <div className="section-heading"><div><h2>{orchestratorName} command map</h2></div><Link href={activeEnclosure ? `/enclosures/${activeEnclosure.id}` : "/enclosures"}>Open enclosure ↗</Link></div>
-          <div className="network-stage network-stage--orchestrated">
-            <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-              <path className="orchestrator-stem" d="M50 12 L50 57" />
-              <path d="M18 34 L50 57 L82 34" /><path d="M18 83 L50 57 L82 83" />
-              <path className={liveSignal ? "signal-path" : undefined} d="M18 34 C38 22 62 22 82 34" />
-            </svg>
-            <div className="network-orchestrator" aria-label={`${orchestratorName}, head agent`}>
-              <span aria-hidden="true">{orchestratorName.slice(0, 1).toUpperCase()}</span>
-              <span><small>HEAD AGENT</small><b>{orchestratorName.toUpperCase()}</b></span>
-              <i>{orchestrator?.provider.toUpperCase() ?? "UNASSIGNED"}</i>
-            </div>
-            <div className="network-core"><span aria-hidden="true" /><b>EVENT LEDGER</b><small>{liveSignal ? `${agentNames.get(liveSignal.agentId)} → ${agentNames.get(liveSignal.targetAgentId ?? "")}` : "Waiting for a routed signal"}</small></div>
-            {networkAgents.map((agent) => (
-              <Link className={`network-agent network-agent--${agent.species}`} href={`/agents/${agent.id}`} key={agent.id}>
-                <AgentMark agent={agent} />
-                <span><b>{agent.name}</b><small>{agent.role} / {formatStatus(agent.status)}</small></span>
-              </Link>
-            ))}
-          </div>
-        </div>
+        {activeEnclosure ? <HabitatWorkflow agents={networkAgents} enclosureId={activeEnclosure.id} headName={orchestratorName} canRun={canManageResource(session, activeEnclosure.ownerAddress)} paused={runtime.paused} /> : null}
 
         <aside className="pulse-panel">
           <div className="section-heading"><div><h2>Latest trace</h2></div><Link href="/trace">All events ↗</Link></div>
@@ -144,9 +123,9 @@ export default async function ZooPage() {
 
       <section className="zoo-bottom-grid">
         <div className="current-mission">
-          <p className="page-eyebrow">Next proof</p>
+          <p className="page-eyebrow">The workflow</p>
           <h2>RAVEN FINDS IT. BEAVER BUILDS IT.</h2>
-          <p>The first complete network loop routes a signal between two species and publishes a common artifact without a human conversation.</p>
+          <p>Give the habitat one mission. Raven passes a ledger observation to Beaver, Beaver publishes a field note, and Owl keeps its memory.</p>
           <Link className="text-link" href="/tasks">Open task board ↗</Link>
         </div>
         <div className="latest-artifacts">

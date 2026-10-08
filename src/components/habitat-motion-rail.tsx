@@ -33,7 +33,7 @@ export function HabitatMotionRail() {
       className="habitat-motion-rail"
       data-motion-item="2"
       data-paused={paused}
-      aria-label="Live habitat handoff preview"
+      aria-label="Species handoff sequence"
     >
       <div className="habitat-motion-rail__viewport">
         <div className="habitat-motion-rail__track">

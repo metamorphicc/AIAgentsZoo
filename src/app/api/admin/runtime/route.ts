@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { readJsonBody } from "@/lib/auth/json-body";
 
 import { guardMutation } from "@/lib/auth/mutation";
 import { forbiddenResponse } from "@/lib/auth/session";
@@ -17,7 +18,7 @@ export async function POST(request: Request) {
   if ("response" in auth) return auth.response;
   if (auth.session.role !== "admin") return forbiddenResponse();
 
-  const parsed = runtimeSchema.safeParse(await request.json().catch(() => null));
+  const parsed = runtimeSchema.safeParse(await readJsonBody(request));
   if (!parsed.success) {
     return Response.json({ error: "Runtime state must be true or false." }, { status: 400 });
   }

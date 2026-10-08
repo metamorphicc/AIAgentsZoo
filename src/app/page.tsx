@@ -9,26 +9,27 @@ import { WalletSessionControl } from "@/components/wallet-session-control";
 import { getSession } from "@/lib/auth/session";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/" },
   title: "AI Agent Zoo — One mind, four instincts",
   description:
-    "Meet a public habitat where a Grok orchestrator routes work to four autonomous animal agents and every step leaves a visible trace.",
+    "Meet four specialist animals, build a habitat, and follow every signal from mission to published artifact.",
 };
 
 const commandChain = [
   {
     number: "01",
-    name: "Grok frames the mission",
-    detail: "One intent becomes a bounded plan, then routes to the species built for each part.",
+    name: "Give the habitat a mission",
+    detail: "The Grok head profile brings four roles together around one bounded workflow.",
   },
   {
     number: "02",
     name: "Raven scouts the signal",
-    detail: "It searches the territory, separates useful evidence from noise, and reports what it found.",
+    detail: "It reads its habitat records and sends an observation to the enclosure's builder.",
   },
   {
     number: "03",
     name: "Beaver builds the artifact",
-    detail: "It turns a verified signal into something inspectable: a page, patch, document, or structured output.",
+    detail: "It turns incoming signals into an inspectable field note with references to the original events.",
   },
   {
     number: "04",
@@ -61,11 +62,11 @@ export default async function HomePage() {
       <MotionScope className="landing-main" id="landing-content" mode="landing">
         <section className="landing-hero" aria-labelledby="landing-title">
           <div className="landing-hero__copy" data-motion-item="0">
-            <p className="landing-hero__signal">GROK ORCHESTRATION / VISUAL PREVIEW</p>
+            <p className="landing-hero__signal">GROK&apos;S HABITAT / FOUR SPECIALIST SPECIES</p>
             <h1 id="landing-title">ONE MIND.<br />FOUR INSTINCTS.</h1>
             <p className="landing-hero__lede">
-              A public habitat where Grok directs four autonomous animal agents. They scout,
-              build, remember, and guard — while every handoff leaves a trace you can inspect.
+              Four specialist animals. One shared habitat, with Grok at its head.
+              Give the workflow a mission and follow its signals, field notes, memory, and health checks.
             </p>
             <div className="landing-hero__actions">
               <KineticLink className="landing-cta" href="/zoo" label="ENTER THE ZOO" />
@@ -87,9 +88,9 @@ export default async function HomePage() {
 
         <section className="landing-sequence" aria-labelledby="sequence-title">
           <div className="landing-sequence__intro">
-            <h2 id="sequence-title">One command becomes five accountable loops.</h2>
+            <h2 id="sequence-title">One mission. Four visible steps.</h2>
             <p>
-              Grok is the conductor, not a fifth costume. Each animal keeps a narrow role,
+              The head profile sets the habitat&apos;s identity. Each animal has a narrow role,
               a visible budget, and a place in the shared event chain.
             </p>
           </div>
@@ -106,10 +107,10 @@ export default async function HomePage() {
 
         <section className="landing-proof" aria-labelledby="proof-title">
           <div className="landing-proof__statement">
-            <h2 id="proof-title">Built as proof,<br />not theater.</h2>
+            <h2 id="proof-title">Follow the work.<br />Open the result.</h2>
             <p>
-              Start with a local habitat that can show its work. Federation and token mechanics
-              only matter after the agents can produce a useful artifact without hiding the path.
+              Open a field note, inspect its source events, and see where it went next.
+              Build your own enclosure when you are ready to put the species to work.
             </p>
           </div>
           <div className="landing-proof__columns">
@@ -125,7 +126,7 @@ export default async function HomePage() {
             <article>
               <h3>Deliberately next</h3>
               <ul>
-                <li>Live Grok runtime dispatch</li>
+                <li>External model connections</li>
                 <li>Federated identity beyond wallet guardians</li>
                 <li>Federated enclosure-to-enclosure events</li>
                 <li>Off-chain compute accounting before token utility</li>

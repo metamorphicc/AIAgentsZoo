@@ -6,23 +6,24 @@ import {
   getAgent,
   getControlAgent,
   getAgentEvents,
-  getAgents,
+  getEnclosureAgents,
   getAgentRuns,
-  getArtifacts,
+  getAgentArtifacts,
   getEnclosure,
-  getRecentEvents,
+  getEnclosureEvents,
+  getIncomingSignals,
   getRuntimeControl,
   insertArtifact,
   insertEvent,
   startAgentRun,
 } from "@/lib/zoo-store";
 
-import { createDemoDecision } from "./providers/demo";
+import { createLocalDecision } from "./providers/local";
 import { createOpenAIDecision } from "./providers/openai";
 
 export class AgentRunError extends Error {
   constructor(
-    public readonly code: "NOT_FOUND" | "NO_FEED" | "UNAVAILABLE" | "PAUSED" | "FAILED",
+    public readonly code: "NOT_FOUND" | "NO_FEED" | "UNAVAILABLE" | "PAUSED" | "LIMIT" | "FAILED",
     message: string,
   ) {
     super(message);
@@ -30,7 +31,7 @@ export class AgentRunError extends Error {
   }
 }
 
-export async function runAgentCycle(agentId: string, taskOverride?: string) {
+export async function runAgentCycle(agentId: string, taskOverride?: string, habitatRunId?: string) {
   const runtime = await getRuntimeControl();
   if (runtime.paused) {
     throw new AgentRunError("PAUSED", "The habitat runtime is paused by an administrator");
@@ -40,12 +41,12 @@ export async function runAgentCycle(agentId: string, taskOverride?: string) {
   if (!agent) throw new AgentRunError("NOT_FOUND", "Agent not found");
 
   const task = taskOverride?.trim() || agent.task;
-  const provider = process.env.AGENT_PROVIDER === "openai" ? "openai" : "demo";
+  const provider = process.env.AGENT_PROVIDER === "openai" ? "openai" : "local";
   const runId = randomUUID();
   const startedAt = new Date().toISOString();
 
   try {
-    await startAgentRun({ agentId, runId, provider, task, createdAt: startedAt });
+    await startAgentRun({ agentId, runId, provider, task, createdAt: startedAt, habitatRunId });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
 
@@ -55,6 +56,8 @@ export async function runAgentCycle(agentId: string, taskOverride?: string) {
     if (message === "NO_FEED") {
       throw new AgentRunError("NO_FEED", "This agent has no compute feed left");
     }
+    if (message === "CYCLE_LIMIT") throw new AgentRunError("LIMIT", "The runtime cycle allowance has been reached. Try again in the next budget window.");
+    if (message === "HABITAT_BUSY") throw new AgentRunError("UNAVAILABLE", "This enclosure already has a workflow in progress.");
     if (message.startsWith("AGENT_UNAVAILABLE:")) {
       throw new AgentRunError(
         "UNAVAILABLE",
@@ -65,26 +68,27 @@ export async function runAgentCycle(agentId: string, taskOverride?: string) {
   }
 
   try {
-    const [recentEvents, enclosure, enclosureAgents, controlAgent] = await Promise.all([
-      getRecentEvents(10),
+    const [recentEvents, enclosure, enclosureAgents, controlAgent, lastArtifacts] = await Promise.all([
+      getEnclosureEvents(agent.enclosureId, 30),
       getEnclosure(agent.enclosureId),
-      getAgents().then((residents) => residents.filter((resident) => resident.enclosureId === agent.enclosureId)),
+      getEnclosureAgents(agent.enclosureId),
       agent.controlAgentId ? getControlAgent(agent.controlAgentId) : null,
+      getAgentArtifacts(agent.id, 1),
     ]);
+    const incomingSignals = await getIncomingSignals(agent.id, lastArtifacts[0]?.createdAt);
     const headAgent = enclosure?.headAgentId ? await getControlAgent(enclosure.headAgentId) : null;
     const decision =
       provider === "openai"
         ? await createOpenAIDecision({ agent, task, recentEvents, controlAgent, headAgent, enclosureAgents })
-        : createDemoDecision({ agent, task, recentEvents, controlAgent, headAgent });
+        : createLocalDecision({ agent, task, recentEvents, enclosureAgents, enclosure, incomingSignals });
 
     for (const event of decision.events) {
       const requestedTarget = event.targetAgentId ? await getAgent(event.targetAgentId) : null;
-      const localBuilder = enclosureAgents.find((resident) => resident.species === "beaver" && resident.id !== agent.id);
-      const targetAgentId = requestedTarget?.enclosureId === agent.enclosureId
-        ? requestedTarget.id
-        : event.targetAgentId && localBuilder
-          ? localBuilder.id
-          : null;
+      if (event.targetAgentId && (!requestedTarget || requestedTarget.enclosureId !== agent.enclosureId)) {
+        await insertEvent({ agentId, type: "warning", summary: "A handoff was rejected because its recipient is outside this enclosure.", payload: { runId } });
+        continue;
+      }
+      const targetAgentId = requestedTarget?.id ?? null;
 
       await insertEvent({
         agentId,
@@ -101,30 +105,31 @@ export async function runAgentCycle(agentId: string, taskOverride?: string) {
     }
 
     if (agent.species === "beaver") {
-      const lastArtifactAt = (await getArtifacts(20))
-        .find((artifact) => artifact.agentId === agent.id)?.createdAt;
-      const incomingSignals = recentEvents
-        .filter((event) =>
-          event.targetAgentId === agent.id
-          && (!lastArtifactAt || event.createdAt > lastArtifactAt)
-        )
-        .slice(0, 3);
-
       if (incomingSignals.length > 0) {
         const artifact = await insertArtifact({
           agentId,
-          title: "Habitat field note",
-          body: incomingSignals
-            .map((event) => `- ${event.summary}`)
-            .join("\n"),
+          title: `${enclosure?.name ?? "Habitat"} — field note`,
+          body: [`Mission: ${task}`, `Territory: ${enclosure?.territory ?? agent.enclosureId}`, "", "Observations", ...incomingSignals.map((event) => `- ${event.summary}\n  Source event: ${event.id}`)].join("\n"),
         });
+        const archivist = enclosureAgents.find((resident) => resident.species === "owl");
 
         await insertEvent({
           agentId,
+          targetAgentId: archivist?.id ?? null,
           type: "artifact",
           summary: `Beaver published “${artifact.title}” from ${incomingSignals.length} incoming signal${incomingSignals.length === 1 ? "" : "s"}.`,
           payload: { artifactId: artifact.id, sourceEventIds: incomingSignals.map((event) => event.id), runId },
         });
+        if (archivist) await insertEvent({ agentId, targetAgentId: archivist.id, type: "request", summary: `Archive the field note: ${artifact.title}.`, payload: { artifactId: artifact.id, runId } });
+      }
+    }
+
+    if (agent.species === "owl") {
+      const sources = recentEvents.filter((event) => event.type === "artifact" && (!lastArtifacts[0] || event.createdAt > lastArtifacts[0].createdAt)).slice(0, 5);
+      if (sources.length) {
+        const memory = await insertArtifact({ agentId, title: `${enclosure?.name ?? "Habitat"} — memory record`, body: [`Mission: ${task}`, "", "Recorded outputs", ...sources.map((event) => `- ${event.summary}\n  Source event: ${event.id}; artifact: ${String(event.payload.artifactId ?? "")}`)].join("\n") });
+        const sentinel = enclosureAgents.find((resident) => resident.species === "meerkat");
+        await insertEvent({ agentId, targetAgentId: sentinel?.id ?? null, type: "artifact", summary: `${agent.name} published a memory record referencing ${sources.length} output(s).`, payload: { artifactId: memory.id, sourceEventIds: sources.map((event) => event.id), runId } });
       }
     }
 
@@ -139,10 +144,10 @@ export async function runAgentCycle(agentId: string, taskOverride?: string) {
       agent: await getAgent(agentId),
       run: (await getAgentRuns(agentId, 1))[0],
       events: await getAgentEvents(agentId, 10),
-      artifacts: (await getArtifacts(10)).filter((artifact) => artifact.agentId === agentId),
+      artifacts: await getAgentArtifacts(agentId),
     };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown runtime error";
+  } catch {
+    const message = "The cycle could not finish. Check the runtime configuration and retry.";
 
     await failAgentRun({
       agentId,
