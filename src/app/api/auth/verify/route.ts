@@ -17,6 +17,8 @@ export async function POST(request: Request) {
   if (storageMode === "ephemeral") {
     return Response.json({ error: "Wallet sign-in is unavailable until durable storage is configured for this deployment." }, { status: 503 });
   }
+  const globalRate = await checkRateLimit({ key: "global", scope: "auth-verify", limit: 200, windowMs: 60_000 });
+  if (!globalRate.allowed) return rateLimitResponse(globalRate.retryAfterSeconds);
   const rate = await checkRateLimit({
     key: requestFingerprint(request),
     scope: "auth-verify",

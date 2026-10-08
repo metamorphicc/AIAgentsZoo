@@ -915,6 +915,7 @@ export async function saveAuthNonce(input: {
 }): Promise<void> {
   await ready();
   const createdAt = new Date().toISOString();
+  await zooStore.execute({ sql: "DELETE FROM auth_nonces WHERE expires_at <= ?", args: [createdAt] });
   await zooStore.execute({
     sql: `INSERT INTO auth_nonces (address, nonce, message, expires_at, created_at)
       VALUES (?, ?, ?, ?, ?)
